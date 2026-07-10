@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Suivi Visites Clients — GIVEDIS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy-950:#05050e;
+  --navy-900:#0c0c1c;
+  --navy-800:#111726;
+  --navy-700:#1a2236;
+  --amber:#c9a84c;
+  --amber-bright:#FFA200;
+  --text-hi:#f2ede0;
+  --text-lo:#9aa2b8;
+  --line:#232b40;
+  --ok:#4caf7d;
+  --warn:#e0a83c;
+  --bad:#d9634c;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:radial-gradient(ellipse at top, var(--navy-900) 0%, var(--navy-950) 60%);
+  color:var(--text-hi);
+  font-family:'Instrument Sans', sans-serif;
+  min-height:100vh;
+  -webkit-tap-highlight-color:transparent;
+}
+h1,h2,h3,.label,.mono,.stat-num,button,.tab,.pill{font-family:'Rajdhani',sans-serif;}
+::selection{background:var(--amber);color:var(--navy-950);}
+#app{max-width:640px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+[hidden]{display:none !important;}
+
+/* ---------- LANDING ---------- */
+#landing{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:32px 24px;text-align:center;gap:28px;}
+#landing .brand{letter-spacing:.14em;text-transform:uppercase;font-size:12px;color:var(--amber);font-weight:600;}
+#landing h1{font-size:30px;margin:0;font-weight:700;letter-spacing:.02em;}
+#landing p{color:var(--text-lo);font-size:14px;max-width:360px;line-height:1.5;margin:0;}
+.landing-choices{display:flex;flex-direction:column;gap:14px;width:100%;max-width:340px;}
+.choice-btn{
+  background:var(--navy-800);border:1px solid var(--line);color:var(--text-hi);
+  padding:20px 18px;border-radius:14px;text-align:left;cursor:pointer;
+  display:flex;flex-direction:column;gap:4px;transition:.15s border-color, .15s transform;
+}
+.choice-btn:active{transform:scale(.98);}
+.choice-btn:hover{border-color:var(--amber);}
+.choice-btn .ct{font-size:17px;font-weight:700;}
+.choice-btn .cd{font-size:12.5px;color:var(--text-lo);font-weight:400;font-family:'Instrument Sans',sans-serif;}
+
+/* ---------- HEADER / NAV ---------- */
+.topbar{position:sticky;top:0;z-index:20;background:rgba(5,5,14,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
+.topbar .who{display:flex;flex-direction:column;}
+.topbar .who .role{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);font-weight:600;}
+.topbar .who .name{font-size:16px;font-weight:700;}
+.topbar button.exit{background:none;border:1px solid var(--line);color:var(--text-lo);border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;}
+
+.tabs{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;border-bottom:1px solid var(--line);}
+.tab{flex:none;background:var(--navy-800);border:1px solid var(--line);color:var(--text-lo);padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.tab.active{background:var(--amber);color:var(--navy-950);border-color:var(--amber);}
+
+.view{padding:18px 16px 60px;flex:1;}
+.section-title{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--amber);font-weight:600;margin:22px 0 10px;}
+.section-title:first-child{margin-top:0;}
+
+/* ---------- FORM ---------- */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12px;color:var(--text-lo);margin-bottom:6px;font-weight:600;letter-spacing:.02em;}
+.field input, .field select, .field textarea{
+  width:100%;background:var(--navy-800);border:1px solid var(--line);color:var(--text-hi);
+  padding:12px 12px;border-radius:10px;font-size:15px;font-family:'Instrument Sans',sans-serif;
+}
+.field textarea{min-height:90px;resize:vertical;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--amber);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.chip-group{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{background:var(--navy-800);border:1px solid var(--line);color:var(--text-lo);padding:8px 13px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:600;}
+.chip.selected{background:var(--amber);border-color:var(--amber);color:var(--navy-950);}
+.chip.result-ok.selected{background:var(--ok);border-color:var(--ok);color:#04140c;}
+.chip.result-relance.selected{background:var(--warn);border-color:var(--warn);color:#241a02;}
+.chip.result-sansuite.selected{background:var(--bad);border-color:var(--bad);color:#210603;}
+
+.btn-primary{width:100%;background:var(--amber);color:var(--navy-950);border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.02em;}
+.btn-primary:active{transform:scale(.99);}
+.btn-secondary{width:100%;background:none;border:1px solid var(--line);color:var(--text-hi);padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;}
+.btn-secondary:hover{border-color:var(--amber);}
+
+/* ---------- LISTS / CARDS ---------- */
+.visit-card{background:var(--navy-800);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;}
+.visit-card .vc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.visit-card .vc-client{font-weight:700;font-size:15px;}
+.visit-card .vc-date{font-size:11.5px;color:var(--text-lo);font-family:'Rajdhani',sans-serif;}
+.visit-card .vc-meta{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0;}
+.pill{font-size:10.5px;padding:3px 9px;border-radius:999px;background:var(--navy-700);color:var(--text-lo);font-weight:600;letter-spacing:.02em;}
+.pill.ok{background:rgba(76,175,125,.15);color:var(--ok);}
+.pill.warn{background:rgba(224,168,60,.15);color:var(--warn);}
+.pill.bad{background:rgba(217,99,76,.15);color:var(--bad);}
+.visit-card .vc-cr{font-size:13.5px;color:var(--text-lo);line-height:1.5;margin-top:4px;}
+.empty{color:var(--text-lo);font-size:13.5px;text-align:center;padding:30px 10px;border:1px dashed var(--line);border-radius:12px;}
+
+/* ---------- KPI GRID ---------- */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.kpi{background:var(--navy-800);border:1px solid var(--line);border-radius:12px;padding:14px;}
+.kpi .stat-num{font-size:26px;font-weight:700;color:var(--amber-bright);line-height:1;}
+.kpi .stat-label{font-size:11.5px;color:var(--text-lo);margin-top:4px;}
+
+/* ---------- FILTERS ---------- */
+.filter-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;}
+.filter-row select{background:var(--navy-800);border:1px solid var(--line);color:var(--text-hi);padding:8px 10px;border-radius:8px;font-size:12.5px;flex:none;}
+
+/* client view */
+.client-select{margin-bottom:16px;}
+.client-summary{background:var(--navy-800);border:1px solid var(--amber);border-radius:14px;padding:16px;margin-bottom:16px;}
+.client-summary h3{margin:0 0 10px;font-size:18px;}
+.cs-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--line);}
+.cs-row:last-child{border-bottom:none;}
+.cs-row .k{color:var(--text-lo);}
+.cs-row .v{font-weight:700;}
+
+/* import box */
+.dropzone{border:1.5px dashed var(--line);border-radius:14px;padding:26px 16px;text-align:center;color:var(--text-lo);font-size:13px;cursor:pointer;}
+.dropzone:hover{border-color:var(--amber);color:var(--text-hi);}
+.import-log{margin-top:12px;font-size:12.5px;color:var(--text-lo);}
+.import-log b{color:var(--ok);}
+
+canvas{max-width:100%;}
+.pdf-form{background:var(--navy-800);border:1px solid var(--line);border-radius:12px;padding:16px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ LANDING ============ -->
+  <div id="landing">
+    <div class="brand">GIVEDIS</div>
+    <h1>Suivi Visites Clients</h1>
+    <p>Un seul outil, deux usages : la saisie terrain pour les commerciaux, et l'espace de contrôle pour la consolidation.</p>
+    <div class="landing-choices">
+      <button class="choice-btn" onclick="enterTerrain()">
+        <span class="ct">📍 Je suis commercial</span>
+        <span class="cd">Saisir mes visites du jour, exporter ma semaine</span>
+      </button>
+      <button class="choice-btn" onclick="enterControl()">
+        <span class="ct">🗂 Espace de contrôle</span>
+        <span class="cd">Importer, consolider, suivre les clients, générer les PDF</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ TERRAIN ============ -->
+  <div id="terrain" hidden>
+    <div class="topbar">
+      <div class="who">
+        <span class="role">Terrain</span>
+        <span class="name" id="terrainWhoName">—</span>
+      </div>
+      <button class="exit" onclick="goLanding()">Quitter</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tp="saisie" onclick="terrainTab('saisie')">Saisie</button>
+      <button class="tab" data-tp="portefeuille" onclick="terrainTab('portefeuille')">Portefeuille</button>
+      <button class="tab" data-tp="mesvisites" onclick="terrainTab('mesvisites')">Mes visites</button>
+      <button class="tab" data-tp="export" onclick="terrainTab('export')">Exporter</button>
+    </div>
+    <div class="view">
+
+      <div id="tp-saisie">
+        <div class="field">
+          <label>Commercial</label>
+          <select id="fCommercial" onchange="setCommercialActif(this.value)">
+            <option value="Clément">Clément</option>
+            <option value="Lorris">Lorris</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Client / agence</label>
+          <select id="fClientSelect" onchange="onClientSelectChange()">
+            <option value="">— Choisir dans le portefeuille —</option>
+            <option value="__nouveau__">➕ Nouveau client (hors portefeuille)</option>
+          </select>
+        </div>
+        <div class="field" id="fClientManualWrap" hidden>
+          <label>Nom du nouveau client / agence</label>
+          <input type="text" id="fClientManual" placeholder="Saisir le nom du client">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="fDate">
+          </div>
+          <div class="field">
+            <label>Type de visite</label>
+            <select id="fType">
+              <option>Prospection</option>
+              <option>Suivi</option>
+              <option>SAV</option>
+              <option>Présentation produit</option>
+              <option>Autre</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Compte-rendu</label>
+          <textarea id="fCompteRendu" placeholder="Ce qui s'est dit, ce qui a été montré, décisions prises..."></textarea>
+        </div>
+        <div class="field">
+          <label>Résultat</label>
+          <div class="chip-group" id="fResultatGroup">
+            <div class="chip result-ok" data-val="RDV concluant" onclick="selectChip(this,'fResultatGroup')">RDV concluant</div>
+            <div class="chip result-relance" data-val="À relancer" onclick="selectChip(this,'fResultatGroup')">À relancer</div>
+            <div class="chip result-sansuite" data-val="Sans suite" onclick="selectChip(this,'fResultatGroup')">Sans suite</div>
+            <div class="chip result-ok" data-val="Vente" onclick="selectChip(this,'fResultatGroup')">Vente</div>
+          </div>
+        </div>
+        <div class="field" id="relanceDateWrap" hidden>
+          <label>Date de relance prévue</label>
+          <input type="date" id="fRelanceDate">
+        </div>
+        <button class="btn-primary" onclick="addVisite()">Enregistrer la visite</button>
+      </div>
+
+      <div id="tp-portefeuille" hidden>
+        <div class="section-title">Importer mon portefeuille</div>
+        <p style="color:var(--text-lo);font-size:13px;line-height:1.5;">Importe la liste de tes clients/agences (fichier CSV ou JSON avec au moins une colonne "client"). Elle alimentera la liste déroulante lors de la saisie d'une visite. Les nouveaux clients ajoutés manuellement rejoignent aussi automatiquement ce portefeuille.</p>
+        <div class="dropzone" onclick="document.getElementById('portfolioInput').click()">
+          Cliquer pour importer mon portefeuille<br>(CSV / JSON)
+        </div>
+        <input type="file" id="portfolioInput" accept=".json,.csv" multiple hidden onchange="handlePortfolioImport(this.files)">
+        <div class="import-log" id="portfolioImportLog"></div>
+        <div class="section-title" style="margin-top:22px;">Mon portefeuille actuel</div>
+        <div id="portfolioList"></div>
+        <button class="btn-secondary" onclick="clearPortfolio()" style="border-color:var(--bad);color:var(--bad);margin-top:14px;">Vider mon portefeuille</button>
+      </div>
+
+      <div id="tp-mesvisites" hidden>
+        <div class="section-title">Historique (cet appareil)</div>
+        <div id="mesVisitesList"></div>
+      </div>
+
+      <div id="tp-export" hidden>
+        <div class="section-title">Exporter mes visites</div>
+        <p style="color:var(--text-lo);font-size:13px;line-height:1.5;">Envoie ce fichier chaque semaine à ton responsable pour qu'il consolide tes visites dans son espace de contrôle.</p>
+        <button class="btn-primary" onclick="exportTerrain('json')">Exporter en JSON (recommandé)</button>
+        <button class="btn-secondary" onclick="exportTerrain('csv')">Exporter en CSV</button>
+        <div class="section-title" style="margin-top:26px;">Zone danger</div>
+        <button class="btn-secondary" onclick="clearTerrain()" style="border-color:var(--bad);color:var(--bad);">Effacer mes visites de cet appareil</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ CONTROL ============ -->
+  <div id="control" hidden>
+    <div class="topbar">
+      <div class="who">
+        <span class="role">Contrôle</span>
+        <span class="name">Espace responsable</span>
+      </div>
+      <button class="exit" onclick="goLanding()">Quitter</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-cp="dashboard" onclick="controlTab('dashboard')">Dashboard</button>
+      <button class="tab" data-cp="liste" onclick="controlTab('liste')">Visites</button>
+      <button class="tab" data-cp="clients" onclick="controlTab('clients')">Par client</button>
+      <button class="tab" data-cp="pdf" onclick="controlTab('pdf')">PDF hebdo</button>
+      <button class="tab" data-cp="import" onclick="controlTab('import')">Import</button>
+    </div>
+    <div class="view">
+
+      <div id="cp-dashboard">
+        <div class="kpi-grid">
+          <div class="kpi"><div class="stat-num" id="kpiTotal">0</div><div class="stat-label">Visites totales</div></div>
+          <div class="kpi"><div class="stat-num" id="kpiSemaine">0</div><div class="stat-label">Cette semaine</div></div>
+          <div class="kpi"><div class="stat-num" id="kpiTransfo">0%</div><div class="stat-label">Taux transformation</div></div>
+          <div class="kpi"><div class="stat-num" id="kpiRelances">0</div><div class="stat-label">Relances en attente</div></div>
+          <div class="kpi" id="kpiDormantsCard" style="grid-column:1 / -1;border-color:var(--bad);cursor:pointer;" onclick="controlTab('clients')">
+            <div class="stat-num" id="kpiDormants" style="color:var(--bad);">0</div>
+            <div class="stat-label">⚠ Clients non visités depuis plus de 2 mois</div>
+          </div>
+        </div>
+        <div class="section-title">Visites par commercial (8 dernières semaines)</div>
+        <canvas id="chartCommercial" height="180"></canvas>
+        <div class="section-title">Répartition des résultats</div>
+        <canvas id="chartResultats" height="180"></canvas>
+      </div>
+
+      <div id="cp-liste" hidden>
+        <div class="filter-row">
+          <select id="filtCommercial" onchange="renderListe()">
+            <option value="">Tous les commerciaux</option>
+            <option value="Clément">Clément</option>
+            <option value="Lorris">Lorris</option>
+          </select>
+          <select id="filtResultat" onchange="renderListe()">
+            <option value="">Tous les résultats</option>
+            <option value="RDV concluant">RDV concluant</option>
+            <option value="À relancer">À relancer</option>
+            <option value="Sans suite">Sans suite</option>
+            <option value="Vente">Vente</option>
+          </select>
+          <select id="filtRelance" onchange="renderListe()">
+            <option value="">Toutes</option>
+            <option value="enattente">Relances en attente</option>
+          </select>
+        </div>
+        <div id="listeVisites"></div>
+      </div>
+
+      <div id="cp-clients" hidden>
+        <div id="dormantsSection"></div>
+        <div class="field client-select">
+          <label>Sélectionner un client</label>
+          <select id="clientSelect" onchange="renderClientView()"></select>
+        </div>
+        <div id="clientViewBody"></div>
+      </div>
+
+      <div id="cp-pdf" hidden>
+        <div class="pdf-form">
+          <div class="field">
+            <label>Commercial</label>
+            <select id="pdfCommercial">
+              <option value="Clément">Clément</option>
+              <option value="Lorris">Lorris</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Semaine</label>
+            <input type="week" id="pdfWeek">
+          </div>
+          <button class="btn-primary" onclick="generatePDF()">Générer le PDF de la semaine</button>
+        </div>
+      </div>
+
+      <div id="cp-import" hidden>
+        <div class="section-title">Importer les visites</div>
+        <p style="color:var(--text-lo);font-size:13px;line-height:1.5;">Sélectionne un ou plusieurs fichiers (JSON ou CSV) envoyés par Clément et Lorris. Les imports se cumulent semaine après semaine, sans doublons.</p>
+        <div class="dropzone" onclick="document.getElementById('importInput').click()">
+          Cliquer pour choisir un ou plusieurs fichiers<br>(JSON / CSV)
+        </div>
+        <input type="file" id="importInput" accept=".json,.csv" multiple hidden onchange="handleImport(this.files)">
+        <div class="import-log" id="importLog"></div>
+        <div class="section-title" style="margin-top:26px;">Zone danger</div>
+        <button class="btn-secondary" onclick="clearControl()" style="border-color:var(--bad);color:var(--bad);">Effacer toutes les données consolidées</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ===================== STORAGE HELPERS ===================== */
+const LS_TERRAIN = 'gv_terrain_visites';
+const LS_CONTROL = 'gv_control_store';
+const LS_COMMERCIAL_ACTIF = 'gv_commercial_actif';
+const LS_PORTFOLIO = 'gv_portfolio';
+
+function loadTerrain(){ try{ return JSON.parse(localStorage.getItem(LS_TERRAIN)) || []; }catch(e){ return []; } }
+function saveTerrain(list){ localStorage.setItem(LS_TERRAIN, JSON.stringify(list)); }
+function loadControl(){ try{ return JSON.parse(localStorage.getItem(LS_CONTROL)) || {}; }catch(e){ return {}; } }
+function saveControl(store){ localStorage.setItem(LS_CONTROL, JSON.stringify(store)); }
+function loadPortfolio(){ try{ return JSON.parse(localStorage.getItem(LS_PORTFOLIO)) || {'Clément':[], 'Lorris':[]}; }catch(e){ return {'Clément':[], 'Lorris':[]}; } }
+function savePortfolio(p){ localStorage.setItem(LS_PORTFOLIO, JSON.stringify(p)); }
+
+function uid(){ return 'v_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
+
+/* ===================== NAVIGATION ===================== */
+function goLanding(){
+  document.getElementById('landing').hidden = false;
+  document.getElementById('terrain').hidden = true;
+  document.getElementById('control').hidden = true;
+}
+function enterTerrain(){
+  document.getElementById('landing').hidden = true;
+  document.getElementById('terrain').hidden = false;
+  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
+  document.getElementById('fCommercial').value = actif;
+  document.getElementById('terrainWhoName').textContent = actif;
+  document.getElementById('fDate').value = todayISO();
+  refreshClientSelect();
+  renderMesVisites();
+}
+function enterControl(){
+  document.getElementById('landing').hidden = true;
+  document.getElementById('control').hidden = false;
+  renderDashboard();
+  populateClientSelect();
+}
+function setCommercialActif(val){
+  localStorage.setItem(LS_COMMERCIAL_ACTIF, val);
+  document.getElementById('terrainWhoName').textContent = val;
+  refreshClientSelect();
+  renderMesVisites();
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+function terrainTab(tp){
+  document.querySelectorAll('#terrain .tab').forEach(t=>t.classList.toggle('active', t.dataset.tp===tp));
+  document.getElementById('tp-saisie').hidden = tp!=='saisie';
+  document.getElementById('tp-portefeuille').hidden = tp!=='portefeuille';
+  document.getElementById('tp-mesvisites').hidden = tp!=='mesvisites';
+  document.getElementById('tp-export').hidden = tp!=='export';
+  if(tp==='mesvisites') renderMesVisites();
+  if(tp==='portefeuille') renderPortfolioList();
+}
+function controlTab(cp){
+  document.querySelectorAll('#control .tab').forEach(t=>t.classList.toggle('active', t.dataset.cp===cp));
+  document.getElementById('cp-dashboard').hidden = cp!=='dashboard';
+  document.getElementById('cp-liste').hidden = cp!=='liste';
+  document.getElementById('cp-clients').hidden = cp!=='clients';
+  document.getElementById('cp-pdf').hidden = cp!=='pdf';
+  document.getElementById('cp-import').hidden = cp!=='import';
+  if(cp==='dashboard') renderDashboard();
+  if(cp==='liste') renderListe();
+  if(cp==='clients') { populateClientSelect(); renderClientView(); }
+}
+
+/* ===================== TERRAIN: SAISIE ===================== */
+function selectChip(el, groupId){
+  document.querySelectorAll('#'+groupId+' .chip').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('relanceDateWrap').hidden = el.dataset.val !== 'À relancer';
+}
+function refreshClientSelect(){
+  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
+  const portfolio = loadPortfolio();
+  const names = Array.from(new Set((portfolio[actif]||[]).map(c=>c.client))).sort((a,b)=>a.localeCompare(b));
+  const sel = document.getElementById('fClientSelect');
+  sel.innerHTML = '<option value="">— Choisir dans le portefeuille —</option>' +
+    names.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('') +
+    '<option value="__nouveau__">➕ Nouveau client (hors portefeuille)</option>';
+  document.getElementById('fClientManualWrap').hidden = true;
+  document.getElementById('fClientManual').value = '';
+}
+function onClientSelectChange(){
+  const val = document.getElementById('fClientSelect').value;
+  document.getElementById('fClientManualWrap').hidden = (val !== '__nouveau__');
+}
+function addToPortfolio(commercial, clientName){
+  const portfolio = loadPortfolio();
+  if(!portfolio[commercial]) portfolio[commercial] = [];
+  const exists = portfolio[commercial].some(c=>c.client.toLowerCase() === clientName.toLowerCase());
+  if(!exists){ portfolio[commercial].push({client: clientName}); savePortfolio(portfolio); }
+}
+function addVisite(){
+  const commercial = document.getElementById('fCommercial').value;
+  const selectVal = document.getElementById('fClientSelect').value;
+  const manualVal = document.getElementById('fClientManual').value.trim();
+  const client = selectVal === '__nouveau__' ? manualVal : selectVal;
+  const date = document.getElementById('fDate').value;
+  const type = document.getElementById('fType').value;
+  const compteRendu = document.getElementById('fCompteRendu').value.trim();
+  const resultatEl = document.querySelector('#fResultatGroup .chip.selected');
+  const resultat = resultatEl ? resultatEl.dataset.val : '';
+  const relanceDate = document.getElementById('fRelanceDate').value || null;
+
+  if(!client){ alert('Merci d\'indiquer le client / l\'agence visitée.'); return; }
+  if(!date){ alert('Merci d\'indiquer la date de la visite.'); return; }
+  if(!resultat){ alert('Merci de sélectionner un résultat.'); return; }
+
+  const visite = {
+    id: uid(), commercial, client, date, type, compteRendu, resultat,
+    relance: resultat === 'À relancer', relanceDate: resultat === 'À relancer' ? relanceDate : null,
+    createdAt: new Date().toISOString()
+  };
+  const list = loadTerrain();
+  list.push(visite);
+  saveTerrain(list);
+
+  // si nouveau client saisi manuellement, on l'ajoute au portefeuille du commercial
+  if(selectVal === '__nouveau__'){ addToPortfolio(commercial, client); }
+
+  // reset form
+  document.getElementById('fClientSelect').value = '';
+  document.getElementById('fClientManual').value = '';
+  document.getElementById('fClientManualWrap').hidden = true;
+  document.getElementById('fCompteRendu').value = '';
+  document.getElementById('fRelanceDate').value = '';
+  document.querySelectorAll('#fResultatGroup .chip').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('relanceDateWrap').hidden = true;
+  document.getElementById('fDate').value = todayISO();
+  refreshClientSelect();
+  terrainTab('mesvisites');
+}
+function renderMesVisites(){
+  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
+  const list = loadTerrain().filter(v=>v.commercial===actif).sort((a,b)=> b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+  const el = document.getElementById('mesVisitesList');
+  if(!list.length){ el.innerHTML = '<div class="empty">Aucune visite enregistrée pour l\'instant.</div>'; return; }
+  el.innerHTML = list.map(visitCardHtml).join('');
+}
+function pillClass(resultat){
+  if(resultat==='RDV concluant'||resultat==='Vente') return 'ok';
+  if(resultat==='À relancer') return 'warn';
+  if(resultat==='Sans suite') return 'bad';
+  return '';
+}
+function visitCardHtml(v){
+  return `<div class="visit-card">
+    <div class="vc-top">
+      <span class="vc-client">${escapeHtml(v.client)}</span>
+      <span class="vc-date">${formatDateFR(v.date)}</span>
+    </div>
+    <div class="vc-meta">
+      <span class="pill">${escapeHtml(v.commercial)}</span>
+      <span class="pill">${escapeHtml(v.type)}</span>
+      <span class="pill ${pillClass(v.resultat)}">${escapeHtml(v.resultat)}</span>
+      ${v.relance && v.relanceDate ? `<span class="pill warn">Relance ${formatDateFR(v.relanceDate)}</span>` : ''}
+    </div>
+    ${v.compteRendu ? `<div class="vc-cr">${escapeHtml(v.compteRendu)}</div>` : ''}
+  </div>`;
+}
+function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function formatDateFR(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+
+/* ===================== TERRAIN: EXPORT ===================== */
+function exportTerrain(fmt){
+  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
+  const list = loadTerrain().filter(v=>v.commercial===actif);
+  if(!list.length){ alert('Aucune visite à exporter pour '+actif+'.'); return; }
+  const dateTag = todayISO();
+  if(fmt==='json'){
+    downloadBlob(JSON.stringify(list, null, 2), `visites_${actif}_${dateTag}.json`, 'application/json');
+  } else {
+    const csv = Papa.unparse(list.map(v=>({
+      id:v.id, commercial:v.commercial, client:v.client, date:v.date, type:v.type,
+      resultat:v.resultat, relance:v.relance, relanceDate:v.relanceDate||'', compteRendu:v.compteRendu, createdAt:v.createdAt
+    })));
+    downloadBlob(csv, `visites_${actif}_${dateTag}.csv`, 'text/csv');
+  }
+}
+function downloadBlob(content, filename, mime){
+  const blob = new Blob([content], {type: mime+';charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function clearTerrain(){
+  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
+  if(!confirm(`Effacer toutes les visites de ${actif} sur cet appareil ? Cette action est irréversible.`)) return;
+  const list = loadTerrain().filter(v=>v.commercial!==actif);
+  saveTerrain(list);
+  renderMesVisites();
+}
+
+/* ===================== PORTEFEUILLE (TERRAIN) ===================== */
+function handlePortfolioImport(fileList){
+  const files = Array.from(fileList);
+  if(!files.length) return;
+  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
+  const portfolio = loadPortfolio();
+  let added=0, skipped=0, errors=0, pending=files.length;
+  const logEl = document.getElementById('portfolioImportLog');
+  logEl.innerHTML = 'Import en cours...';
+
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        let rows = [];
+        if(file.name.toLowerCase().endsWith('.json')){
+          const parsed = JSON.parse(e.target.result);
+          rows = Array.isArray(parsed) ? parsed : [];
+        } else {
+          const parsed = Papa.parse(e.target.result, {header:true, skipEmptyLines:true});
+          rows = parsed.data;
+        }
+        rows.forEach(r=>{
+          if(!r) return;
+          // recherche flexible du nom de colonne
+          const keys = Object.keys(r);
+          const clientKey = keys.find(k=>['client','nom','nom_client','agence','societe','société'].includes(k.toLowerCase().trim()));
+          const clientName = clientKey ? (r[clientKey]||'').toString().trim() : '';
+          if(!clientName) return;
+          // colonne commercial optionnelle pour répartir l'import
+          const commKey = keys.find(k=>k.toLowerCase().trim()==='commercial');
+          const targetCommercial = commKey && r[commKey] ? r[commKey].toString().trim() : actif;
+          if(!portfolio[targetCommercial]) portfolio[targetCommercial] = [];
+          const exists = portfolio[targetCommercial].some(c=>c.client.toLowerCase() === clientName.toLowerCase());
+          if(exists){ skipped++; } else { portfolio[targetCommercial].push({client: clientName}); added++; }
+        });
+      }catch(err){ errors++; }
+      pending--;
+      if(pending===0){
+        savePortfolio(portfolio);
+        logEl.innerHTML = `Import terminé : <b>${added} client(s) ajouté(s)</b>, ${skipped} déjà présent(s)${errors?`, ${errors} fichier(s) en erreur`:''}.`;
+        refreshClientSelect();
+        renderPortfolioList();
+      }
+    };
+    reader.onerror = function(){ errors++; pending--; };
+    reader.readAsText(file);
+  });
+}
+function renderPortfolioList(){
+  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
+  const portfolio = loadPortfolio();
+  const list = (portfolio[actif]||[]).slice().sort((a,b)=>a.client.localeCompare(b.client));
+  const el = document.getElementById('portfolioList');
+  if(!list.length){ el.innerHTML = '<div class="empty">Aucun client dans le portefeuille de '+escapeHtml(actif)+' pour l\'instant.</div>'; return; }
+  el.innerHTML = `<p style="color:var(--text-lo);font-size:12.5px;margin-bottom:10px;">${list.length} client(s) pour ${escapeHtml(actif)}</p>` +
+    list.map(c=>`<div class="visit-card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;">
+      <span class="vc-client" style="font-size:14px;">${escapeHtml(c.client)}</span>
+      <button class="exit" onclick="removeFromPortfolio('${escapeHtml(c.client).replace(/'/g,"\\'")}')">Retirer</button>
+    </div>`).join('');
+}
+function removeFromPortfolio(clientName){
+  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
+  const portfolio = loadPortfolio();
+  portfolio[actif] = (portfolio[actif]||[]).filter(c=>c.client !== clientName);
+  savePortfolio(portfolio);
+  refreshClientSelect();
+  renderPortfolioList();
+}
+function clearPortfolio(){
+  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
+  if(!confirm(`Vider tout le portefeuille de ${actif} ?`)) return;
+  const portfolio = loadPortfolio();
+  portfolio[actif] = [];
+  savePortfolio(portfolio);
+  refreshClientSelect();
+  renderPortfolioList();
+}
+
+/* ===================== IMPORT (CONTROL) ===================== */
+function handleImport(fileList){
+  const files = Array.from(fileList);
+  if(!files.length) return;
+  const store = loadControl();
+  let added=0, updated=0, errors=0;
+  let pending = files.length;
+  const logEl = document.getElementById('importLog');
+  logEl.innerHTML = 'Import en cours...';
+
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        let visites = [];
+        if(file.name.toLowerCase().endsWith('.json')){
+          visites = JSON.parse(e.target.result);
+        } else {
+          const parsed = Papa.parse(e.target.result, {header:true, skipEmptyLines:true});
+          visites = parsed.data.map(r=>({
+            id: r.id || uid(), commercial: r.commercial, client: r.client, date: r.date,
+            type: r.type, resultat: r.resultat, relance: r.relance==='true'||r.relance===true,
+            relanceDate: r.relanceDate || null, compteRendu: r.compteRendu, createdAt: r.createdAt || new Date().toISOString()
+          }));
+        }
+        visites.forEach(v=>{
+          if(!v || !v.id || !v.client || !v.date){ return; }
+          if(store[v.id]) updated++; else added++;
+          store[v.id] = v;
+        });
+      }catch(err){
+        errors++;
+      }
+      pending--;
+      if(pending===0){
+        saveControl(store);
+        logEl.innerHTML = `Import terminé : <b>${added} ajoutée(s)</b>, ${updated} mise(s) à jour${errors?`, ${errors} fichier(s) en erreur`:''}.`;
+        renderDashboard();
+        populateClientSelect();
+      }
+    };
+    reader.onerror = function(){ errors++; pending--; };
+    reader.readAsText(file);
+  });
+}
+function clearControl(){
+  if(!confirm('Effacer TOUTES les visites consolidées de l\'espace contrôle ? Cette action est irréversible.')) return;
+  saveControl({});
+  renderDashboard();
+  populateClientSelect();
+  document.getElementById('importLog').innerHTML = '';
+}
+
+/* ===================== DASHBOARD ===================== */
+let chartCommercialInstance=null, chartResultatsInstance=null;
+function getISOWeek(d){
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+  const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1)/7);
+  return `${date.getUTCFullYear()}-S${String(weekNo).padStart(2,'0')}`;
+}
+function renderDashboard(){
+  const all = Object.values(loadControl());
+  document.getElementById('kpiTotal').textContent = all.length;
+
+  const now = new Date();
+  const weekAgo = new Date(now); weekAgo.setDate(now.getDate()-7);
+  const cetteSemaine = all.filter(v=> new Date(v.date) >= weekAgo && new Date(v.date) <= now).length;
+  document.getElementById('kpiSemaine').textContent = cetteSemaine;
+
+  const conclu = all.filter(v=>v.resultat==='RDV concluant'||v.resultat==='Vente').length;
+  const taux = all.length ? Math.round((conclu/all.length)*100) : 0;
+  document.getElementById('kpiTransfo').textContent = taux+'%';
+
+  const relances = all.filter(v=>v.relance && v.relanceDate && new Date(v.relanceDate) >= new Date(new Date().toDateString())).length;
+  document.getElementById('kpiRelances').textContent = relances;
+
+  document.getElementById('kpiDormants').textContent = getDormantClients(all).length;
+
+  // chart 1: visites par commercial par semaine (8 dernières)
+  const weeksMap = {};
+  all.forEach(v=>{
+    if(!v.date) return;
+    const wk = getISOWeek(new Date(v.date));
+    weeksMap[wk] = weeksMap[wk] || {Clément:0, Lorris:0};
+    if(weeksMap[wk][v.commercial]!==undefined) weeksMap[wk][v.commercial]++;
+  });
+  const weekKeys = Object.keys(weeksMap).sort().slice(-8);
+  const ctx1 = document.getElementById('chartCommercial').getContext('2d');
+  if(chartCommercialInstance) chartCommercialInstance.destroy();
+  chartCommercialInstance = new Chart(ctx1, {
+    type:'bar',
+    data:{
+      labels: weekKeys,
+      datasets:[
+        {label:'Clément', data: weekKeys.map(w=>weeksMap[w].Clément||0), backgroundColor:'#c9a84c'},
+        {label:'Lorris', data: weekKeys.map(w=>weeksMap[w].Lorris||0), backgroundColor:'#4caf7d'}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{labels:{color:'#f2ede0'}}},
+      scales:{
+        x:{ticks:{color:'#9aa2b8'}, grid:{color:'#232b40'}},
+        y:{ticks:{color:'#9aa2b8'}, grid:{color:'#232b40'}, beginAtZero:true}
+      }
+    }
+  });
+
+  // chart 2: répartition résultats
+  const resultCounts = {'RDV concluant':0,'Vente':0,'À relancer':0,'Sans suite':0};
+  all.forEach(v=>{ if(resultCounts[v.resultat]!==undefined) resultCounts[v.resultat]++; });
+  const ctx2 = document.getElementById('chartResultats').getContext('2d');
+  if(chartResultatsInstance) chartResultatsInstance.destroy();
+  chartResultatsInstance = new Chart(ctx2, {
+    type:'doughnut',
+    data:{
+      labels: Object.keys(resultCounts),
+      datasets:[{data:Object.values(resultCounts), backgroundColor:['#4caf7d','#c9a84c','#e0a83c','#d9634c']}]
+    },
+    options:{ responsive:true, plugins:{legend:{position:'bottom', labels:{color:'#f2ede0'}}} }
+  });
+}
+
+/* ===================== LISTE ===================== */
+function renderListe(){
+  const all = Object.values(loadControl());
+  const fc = document.getElementById('filtCommercial').value;
+  const fr = document.getElementById('filtResultat').value;
+  const frel = document.getElementById('filtRelance').value;
+  let list = all;
+  if(fc) list = list.filter(v=>v.commercial===fc);
+  if(fr) list = list.filter(v=>v.resultat===fr);
+  if(frel==='enattente') list = list.filter(v=>v.relance && v.relanceDate && new Date(v.relanceDate) >= new Date(new Date().toDateString()));
+  list = list.sort((a,b)=> b.date.localeCompare(a.date));
+  const el = document.getElementById('listeVisites');
+  if(!list.length){ el.innerHTML = '<div class="empty">Aucune visite ne correspond à ces filtres.</div>'; return; }
+  el.innerHTML = list.map(visitCardHtml).join('');
+}
+
+/* ===================== CLIENTS ===================== */
+const DORMANT_DAYS = 60; // ~2 mois
+
+function daysSince(dateIso){
+  const d = new Date(dateIso+'T00:00:00');
+  const now = new Date(new Date().toDateString());
+  return Math.floor((now - d) / 86400000);
+}
+function getDormantClients(all){
+  const byClient = {};
+  all.forEach(v=>{
+    if(!v.client || !v.date) return;
+    if(!byClient[v.client] || v.date > byClient[v.client].date) byClient[v.client] = v;
+  });
+  return Object.entries(byClient)
+    .map(([client, v])=>({client, lastDate:v.date, commercial:v.commercial, days: daysSince(v.date)}))
+    .filter(c=>c.days >= DORMANT_DAYS)
+    .sort((a,b)=> b.days - a.days);
+}
+function renderDormantsSection(){
+  const all = Object.values(loadControl());
+  const dormants = getDormantClients(all);
+  const el = document.getElementById('dormantsSection');
+  if(!dormants.length){ el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div class="section-title" style="color:var(--bad);">⚠ Clients non visités depuis plus de 2 mois (${dormants.length})</div>
+    ${dormants.map(c=>`
+      <div class="visit-card" style="border-color:var(--bad);cursor:pointer;" onclick="selectClientFromDormant('${escapeHtml(c.client).replace(/'/g,"\\'")}')">
+        <div class="vc-top">
+          <span class="vc-client">${escapeHtml(c.client)}</span>
+          <span class="pill bad">${c.days} j.</span>
+        </div>
+        <div class="vc-meta">
+          <span class="pill">${escapeHtml(c.commercial)}</span>
+          <span class="pill">Dernière visite : ${formatDateFR(c.lastDate)}</span>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+function selectClientFromDormant(client){
+  document.getElementById('clientSelect').value = client;
+  renderClientView();
+  document.getElementById('clientViewBody').scrollIntoView({behavior:'smooth', block:'start'});
+}
+function populateClientSelect(){
+  const all = Object.values(loadControl());
+  const dormantNames = new Set(getDormantClients(all).map(c=>c.client));
+  const names = Array.from(new Set(all.map(v=>v.client))).sort((a,b)=>a.localeCompare(b));
+  const sel = document.getElementById('clientSelect');
+  const current = sel.value;
+  sel.innerHTML = names.map(n=>`<option value="${escapeHtml(n)}">${dormantNames.has(n)?'⚠ ':''}${escapeHtml(n)}</option>`).join('');
+  if(names.includes(current)) sel.value = current;
+  renderDormantsSection();
+}
+function renderClientView(){
+  const all = Object.values(loadControl());
+  const sel = document.getElementById('clientSelect');
+  const client = sel.value;
+  const body = document.getElementById('clientViewBody');
+  if(!client){ body.innerHTML = '<div class="empty">Aucun client dans l\'espace contrôle pour l\'instant. Importe des visites.</div>'; return; }
+  const visites = all.filter(v=>v.client===client).sort((a,b)=> b.date.localeCompare(a.date));
+  const nb = visites.length;
+  const dernier = visites[0];
+  const conclu = visites.filter(v=>v.resultat==='RDV concluant'||v.resultat==='Vente').length;
+  const relanceEnAttente = visites.find(v=>v.relance && v.relanceDate && new Date(v.relanceDate) >= new Date(new Date().toDateString()));
+  const commerciaux = Array.from(new Set(visites.map(v=>v.commercial)));
+  const joursDepuis = dernier ? daysSince(dernier.date) : null;
+  const alerteHtml = (joursDepuis !== null && joursDepuis >= DORMANT_DAYS)
+    ? `<div class="visit-card" style="border-color:var(--bad);background:rgba(217,99,76,.08);margin-bottom:14px;">
+        <strong style="color:var(--bad);">⚠ Aucune visite depuis ${joursDepuis} jours</strong>
+        <div style="color:var(--text-lo);font-size:12.5px;margin-top:4px;">Ce client n'a pas été revu depuis plus de 2 mois, une relance est recommandée.</div>
+      </div>`
+    : '';
+
+  body.innerHTML = `
+    ${alerteHtml}
+    <div class="client-summary">
+      <h3>${escapeHtml(client)}</h3>
+      <div class="cs-row"><span class="k">Nombre de visites</span><span class="v">${nb}</span></div>
+      <div class="cs-row"><span class="k">Commercial(aux) suivi(s)</span><span class="v">${escapeHtml(commerciaux.join(', '))}</span></div>
+      <div class="cs-row"><span class="k">Dernière visite</span><span class="v">${dernier ? formatDateFR(dernier.date) : '—'}</span></div>
+      <div class="cs-row"><span class="k">Dernier résultat</span><span class="v">${dernier ? escapeHtml(dernier.resultat) : '—'}</span></div>
+      <div class="cs-row"><span class="k">RDV / ventes conclus</span><span class="v">${conclu}</span></div>
+      <div class="cs-row"><span class="k">Relance en attente</span><span class="v">${relanceEnAttente ? formatDateFR(relanceEnAttente.relanceDate) : 'Aucune'}</span></div>
+    </div>
+    <div class="section-title">Historique complet</div>
+    ${visites.map(visitCardHtml).join('')}
+  `;
+}
+
+/* ===================== PDF HEBDO ===================== */
+function isoWeekToRange(weekStr){
+  // weekStr format: "2026-W28"
+  const [yearStr, weekNoStr] = weekStr.split('-W');
+  const year = parseInt(yearStr,10), weekNo = parseInt(weekNoStr,10);
+  const simple = new Date(Date.UTC(year,0,1 + (weekNo-1)*7));
+  const dow = simple.getUTCDay() || 7;
+  const monday = new Date(simple);
+  if(dow <= 4) monday.setUTCDate(simple.getUTCDate() - dow + 1);
+  else monday.setUTCDate(simple.getUTCDate() + 8 - dow);
+  const sunday = new Date(monday); sunday.setUTCDate(monday.getUTCDate()+6);
+  return {start: monday, end: sunday};
+}
+function generatePDF(){
+  const commercial = document.getElementById('pdfCommercial').value;
+  const weekVal = document.getElementById('pdfWeek').value;
+  if(!weekVal){ alert('Merci de sélectionner une semaine.'); return; }
+  const {start, end} = isoWeekToRange(weekVal);
+  const all = Object.values(loadControl());
+  const visites = all.filter(v=>{
+    if(v.commercial!==commercial) return false;
+    const d = new Date(v.date+'T00:00:00Z');
+    return d >= start && d <= end;
+  }).sort((a,b)=>a.date.localeCompare(b.date));
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const amber = [201,168,76];
+  const navy = [17,23,38];
+
+  doc.setFillColor(...navy);
+  doc.rect(0,0,210,32,'F');
+  doc.setTextColor(...amber);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(18);
+  doc.text('GIVEDIS — Suivi Visites Clients', 14, 15);
+  doc.setFontSize(11);
+  doc.setTextColor(255,255,255);
+  doc.text(`${commercial} — semaine du ${formatDateFR(start.toISOString().slice(0,10))} au ${formatDateFR(end.toISOString().slice(0,10))}`, 14, 24);
+
+  let y = 42;
+  doc.setTextColor(20,20,20);
+  doc.setFontSize(13);
+  doc.setFont('helvetica','bold');
+  doc.text('Synthèse de la semaine', 14, y);
+  y += 4;
+
+  const nb = visites.length;
+  const conclu = visites.filter(v=>v.resultat==='RDV concluant'||v.resultat==='Vente').length;
+  const relance = visites.filter(v=>v.resultat==='À relancer').length;
+  const sansSuite = visites.filter(v=>v.resultat==='Sans suite').length;
+  const taux = nb ? Math.round((conclu/nb)*100) : 0;
+
+  doc.autoTable({
+    startY: y+4,
+    head: [['Indicateur','Valeur']],
+    body: [
+      ['Visites réalisées', String(nb)],
+      ['RDV concluants / ventes', String(conclu)],
+      ['À relancer', String(relance)],
+      ['Sans suite', String(sansSuite)],
+      ['Taux de transformation', taux+'%']
+    ],
+    theme:'plain',
+    headStyles:{fillColor:amber, textColor:[17,23,38], fontStyle:'bold'},
+    styles:{fontSize:10, cellPadding:3},
+    margin:{left:14,right:14}
+  });
+
+  y = doc.lastAutoTable.finalY + 12;
+  doc.setFontSize(13);
+  doc.setFont('helvetica','bold');
+  doc.text('Détail des visites', 14, y);
+
+  if(!visites.length){
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(10);
+    doc.text('Aucune visite enregistrée sur cette semaine.', 14, y+8);
+  } else {
+    doc.autoTable({
+      startY: y+4,
+      head: [['Date','Client','Type','Résultat','Compte-rendu']],
+      body: visites.map(v=>[formatDateFR(v.date), v.client, v.type, v.resultat, v.compteRendu||'']),
+      theme:'striped',
+      headStyles:{fillColor:navy, textColor:255},
+      styles:{fontSize:9, cellPadding:3, overflow:'linebreak'},
+      columnStyles:{4:{cellWidth:70}},
+      margin:{left:14,right:14}
+    });
+  }
+
+  doc.save(`Visites_${commercial}_${weekVal}.pdf`);
+}
+
+/* ===================== INIT ===================== */
+document.getElementById('fDate') && (document.getElementById('fDate').value = todayISO());
+</script>
+</body>
+</html>
