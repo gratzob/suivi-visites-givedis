@@ -25,6 +25,7 @@
   --ok:#4caf7d;
   --warn:#e0a83c;
   --bad:#d9634c;
+  --info:#4c8ec9;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
@@ -85,6 +86,7 @@ h1,h2,h3,.label,.mono,.stat-num,button,.tab,.pill{font-family:'Rajdhani',sans-se
 .chip{background:var(--navy-800);border:1px solid var(--line);color:var(--text-lo);padding:8px 13px;border-radius:999px;font-size:13px;cursor:pointer;font-weight:600;}
 .chip.selected{background:var(--amber);border-color:var(--amber);color:var(--navy-950);}
 .chip.result-ok.selected{background:var(--ok);border-color:var(--ok);color:#04140c;}
+.chip.result-devis.selected{background:var(--info);border-color:var(--info);color:#04141f;}
 .chip.result-relance.selected{background:var(--warn);border-color:var(--warn);color:#241a02;}
 .chip.result-sansuite.selected{background:var(--bad);border-color:var(--bad);color:#210603;}
 
@@ -103,6 +105,7 @@ h1,h2,h3,.label,.mono,.stat-num,button,.tab,.pill{font-family:'Rajdhani',sans-se
 .pill.ok{background:rgba(76,175,125,.15);color:var(--ok);}
 .pill.warn{background:rgba(224,168,60,.15);color:var(--warn);}
 .pill.bad{background:rgba(217,99,76,.15);color:var(--bad);}
+.pill.info{background:rgba(76,142,201,.15);color:var(--info);}
 .visit-card .vc-cr{font-size:13.5px;color:var(--text-lo);line-height:1.5;margin-top:4px;}
 .empty{color:var(--text-lo);font-size:13.5px;text-align:center;padding:30px 10px;border:1px dashed var(--line);border-radius:12px;}
 
@@ -133,6 +136,23 @@ h1,h2,h3,.label,.mono,.stat-num,button,.tab,.pill{font-family:'Rajdhani',sans-se
 
 canvas{max-width:100%;}
 .pdf-form{background:var(--navy-800);border:1px solid var(--line);border-radius:12px;padding:16px;}
+
+/* commerciaux */
+.comm-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media (max-width:480px){.comm-grid{grid-template-columns:1fr;}}
+.comm-card{background:var(--navy-800);border:1px solid var(--line);border-radius:14px;padding:16px;}
+.comm-card h3{margin:0 0 4px;font-size:19px;}
+.comm-card .cc-taux{font-size:34px;font-weight:700;color:var(--amber-bright);line-height:1;margin:8px 0 2px;}
+.comm-card .cc-taux-label{font-size:11px;color:var(--text-lo);margin-bottom:14px;}
+.comm-row{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line);}
+.comm-row:last-child{border-bottom:none;}
+.comm-row .k{color:var(--text-lo);}
+.comm-row .v{font-weight:700;}
+.comm-row .v.bad{color:var(--bad);}
+.progress-compare{margin:18px 0;}
+.progress-compare .pc-label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-lo);margin-bottom:5px;}
+.progress-compare .pc-bar-bg{background:var(--navy-800);border:1px solid var(--line);border-radius:999px;height:14px;overflow:hidden;margin-bottom:12px;}
+.progress-compare .pc-bar-fill{height:100%;border-radius:999px;background:var(--amber);transition:width .3s;}
 </style>
 </head>
 <body>
@@ -212,12 +232,24 @@ canvas{max-width:100%;}
           <textarea id="fCompteRendu" placeholder="Ce qui s'est dit, ce qui a été montré, décisions prises..."></textarea>
         </div>
         <div class="field">
+          <label>Contact sur place (optionnel)</label>
+          <div class="row2">
+            <input type="text" id="fContactNom" placeholder="Nom">
+            <input type="text" id="fContactPrenom" placeholder="Prénom">
+          </div>
+          <div class="row2" style="margin-top:10px;">
+            <input type="tel" id="fContactTel" placeholder="Téléphone">
+            <input type="email" id="fContactEmail" placeholder="Email">
+          </div>
+        </div>
+        <div class="field">
           <label>Résultat</label>
           <div class="chip-group" id="fResultatGroup">
-            <div class="chip result-ok" data-val="RDV concluant" onclick="selectChip(this,'fResultatGroup')">RDV concluant</div>
+            <div class="chip result-ok" data-val="Vente" onclick="selectChip(this,'fResultatGroup')">Vente</div>
+            <div class="chip result-ok" data-val="Ouverture de compte remplie" onclick="selectChip(this,'fResultatGroup')">Ouverture de compte remplie</div>
+            <div class="chip result-devis" data-val="Devis établi" onclick="selectChip(this,'fResultatGroup')">Devis établi</div>
             <div class="chip result-relance" data-val="À relancer" onclick="selectChip(this,'fResultatGroup')">À relancer</div>
             <div class="chip result-sansuite" data-val="Sans suite" onclick="selectChip(this,'fResultatGroup')">Sans suite</div>
-            <div class="chip result-ok" data-val="Vente" onclick="selectChip(this,'fResultatGroup')">Vente</div>
           </div>
         </div>
         <div class="field" id="relanceDateWrap" hidden>
@@ -268,6 +300,7 @@ canvas{max-width:100%;}
     </div>
     <div class="tabs">
       <button class="tab active" data-cp="dashboard" onclick="controlTab('dashboard')">Dashboard</button>
+      <button class="tab" data-cp="commerciaux" onclick="controlTab('commerciaux')">Commerciaux</button>
       <button class="tab" data-cp="liste" onclick="controlTab('liste')">Visites</button>
       <button class="tab" data-cp="clients" onclick="controlTab('clients')">Par client</button>
       <button class="tab" data-cp="pdf" onclick="controlTab('pdf')">PDF hebdo</button>
@@ -292,6 +325,15 @@ canvas{max-width:100%;}
         <canvas id="chartResultats" height="180"></canvas>
       </div>
 
+      <div id="cp-commerciaux" hidden>
+        <div class="comm-grid" id="commCardsWrap"></div>
+
+        <div class="progress-compare" id="tauxCompareWrap"></div>
+
+        <div class="section-title">Comparatif (visites, ventes, ouvertures, devis, relances)</div>
+        <canvas id="chartCommerciauxCompare" height="220"></canvas>
+      </div>
+
       <div id="cp-liste" hidden>
         <div class="filter-row">
           <select id="filtCommercial" onchange="renderListe()">
@@ -301,10 +343,11 @@ canvas{max-width:100%;}
           </select>
           <select id="filtResultat" onchange="renderListe()">
             <option value="">Tous les résultats</option>
-            <option value="RDV concluant">RDV concluant</option>
+            <option value="Vente">Vente</option>
+            <option value="Ouverture de compte remplie">Ouverture de compte remplie</option>
+            <option value="Devis établi">Devis établi</option>
             <option value="À relancer">À relancer</option>
             <option value="Sans suite">Sans suite</option>
-            <option value="Vente">Vente</option>
           </select>
           <select id="filtRelance" onchange="renderListe()">
             <option value="">Toutes</option>
@@ -324,6 +367,7 @@ canvas{max-width:100%;}
       </div>
 
       <div id="cp-pdf" hidden>
+        <div class="section-title">PDF hebdomadaire</div>
         <div class="pdf-form">
           <div class="field">
             <label>Commercial</label>
@@ -336,7 +380,23 @@ canvas{max-width:100%;}
             <label>Semaine</label>
             <input type="week" id="pdfWeek">
           </div>
-          <button class="btn-primary" onclick="generatePDF()">Générer le PDF de la semaine</button>
+          <button class="btn-primary" onclick="generatePDFWeekly()">Générer le PDF de la semaine</button>
+        </div>
+
+        <div class="section-title">PDF mensuel</div>
+        <div class="pdf-form">
+          <div class="field">
+            <label>Commercial</label>
+            <select id="pdfCommercialMois">
+              <option value="Clément">Clément</option>
+              <option value="Lorris">Lorris</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Mois</label>
+            <input type="month" id="pdfMois">
+          </div>
+          <button class="btn-primary" onclick="generatePDFMonthly()">Générer le PDF du mois</button>
         </div>
       </div>
 
@@ -415,11 +475,13 @@ function terrainTab(tp){
 function controlTab(cp){
   document.querySelectorAll('#control .tab').forEach(t=>t.classList.toggle('active', t.dataset.cp===cp));
   document.getElementById('cp-dashboard').hidden = cp!=='dashboard';
+  document.getElementById('cp-commerciaux').hidden = cp!=='commerciaux';
   document.getElementById('cp-liste').hidden = cp!=='liste';
   document.getElementById('cp-clients').hidden = cp!=='clients';
   document.getElementById('cp-pdf').hidden = cp!=='pdf';
   document.getElementById('cp-import').hidden = cp!=='import';
   if(cp==='dashboard') renderDashboard();
+  if(cp==='commerciaux') renderCommerciauxView();
   if(cp==='liste') renderListe();
   if(cp==='clients') { populateClientSelect(); renderClientView(); }
 }
@@ -462,6 +524,10 @@ function addVisite(){
   const resultatEl = document.querySelector('#fResultatGroup .chip.selected');
   const resultat = resultatEl ? resultatEl.dataset.val : '';
   const relanceDate = document.getElementById('fRelanceDate').value || null;
+  const contactNom = document.getElementById('fContactNom').value.trim();
+  const contactPrenom = document.getElementById('fContactPrenom').value.trim();
+  const contactTel = document.getElementById('fContactTel').value.trim();
+  const contactEmail = document.getElementById('fContactEmail').value.trim();
 
   if(!client){ alert('Merci d\'indiquer le client / l\'agence visitée.'); return; }
   if(!date){ alert('Merci d\'indiquer la date de la visite.'); return; }
@@ -470,6 +536,7 @@ function addVisite(){
   const visite = {
     id: uid(), commercial, client, date, type, compteRendu, resultat,
     relance: resultat === 'À relancer', relanceDate: resultat === 'À relancer' ? relanceDate : null,
+    contactNom, contactPrenom, contactTel, contactEmail,
     createdAt: new Date().toISOString()
   };
   const list = loadTerrain();
@@ -482,6 +549,10 @@ function addVisite(){
   // reset form
   document.getElementById('fClientSelect').value = '';
   document.getElementById('fClientManual').value = '';
+  document.getElementById('fContactNom').value = '';
+  document.getElementById('fContactPrenom').value = '';
+  document.getElementById('fContactTel').value = '';
+  document.getElementById('fContactEmail').value = '';
   document.getElementById('fClientManualWrap').hidden = true;
   document.getElementById('fCompteRendu').value = '';
   document.getElementById('fRelanceDate').value = '';
@@ -499,12 +570,18 @@ function renderMesVisites(){
   el.innerHTML = list.map(visitCardHtml).join('');
 }
 function pillClass(resultat){
-  if(resultat==='RDV concluant'||resultat==='Vente') return 'ok';
+  if(resultat==='Vente'||resultat==='Ouverture de compte remplie') return 'ok';
+  if(resultat==='Devis établi') return 'info';
   if(resultat==='À relancer') return 'warn';
   if(resultat==='Sans suite') return 'bad';
   return '';
 }
+function isConversion(resultat){
+  return resultat === 'Vente' || resultat === 'Ouverture de compte remplie';
+}
 function visitCardHtml(v){
+  const contact = (v.contactNom || v.contactPrenom) ? `${v.contactPrenom||''} ${v.contactNom||''}`.trim() : '';
+  const contactLine = (contact || v.contactTel || v.contactEmail) ? `<div class="vc-cr" style="color:var(--text-lo);font-size:12px;">👤 ${escapeHtml(contact)}${v.contactTel?' · '+escapeHtml(v.contactTel):''}${v.contactEmail?' · '+escapeHtml(v.contactEmail):''}</div>` : '';
   return `<div class="visit-card">
     <div class="vc-top">
       <span class="vc-client">${escapeHtml(v.client)}</span>
@@ -517,6 +594,7 @@ function visitCardHtml(v){
       ${v.relance && v.relanceDate ? `<span class="pill warn">Relance ${formatDateFR(v.relanceDate)}</span>` : ''}
     </div>
     ${v.compteRendu ? `<div class="vc-cr">${escapeHtml(v.compteRendu)}</div>` : ''}
+    ${contactLine}
   </div>`;
 }
 function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -705,7 +783,7 @@ function renderDashboard(){
   const cetteSemaine = all.filter(v=> new Date(v.date) >= weekAgo && new Date(v.date) <= now).length;
   document.getElementById('kpiSemaine').textContent = cetteSemaine;
 
-  const conclu = all.filter(v=>v.resultat==='RDV concluant'||v.resultat==='Vente').length;
+  const conclu = all.filter(v=>isConversion(v.resultat)).length;
   const taux = all.length ? Math.round((conclu/all.length)*100) : 0;
   document.getElementById('kpiTransfo').textContent = taux+'%';
 
@@ -745,7 +823,7 @@ function renderDashboard(){
   });
 
   // chart 2: répartition résultats
-  const resultCounts = {'RDV concluant':0,'Vente':0,'À relancer':0,'Sans suite':0};
+  const resultCounts = {'Vente':0,'Ouverture de compte remplie':0,'Devis établi':0,'À relancer':0,'Sans suite':0};
   all.forEach(v=>{ if(resultCounts[v.resultat]!==undefined) resultCounts[v.resultat]++; });
   const ctx2 = document.getElementById('chartResultats').getContext('2d');
   if(chartResultatsInstance) chartResultatsInstance.destroy();
@@ -753,9 +831,96 @@ function renderDashboard(){
     type:'doughnut',
     data:{
       labels: Object.keys(resultCounts),
-      datasets:[{data:Object.values(resultCounts), backgroundColor:['#4caf7d','#c9a84c','#e0a83c','#d9634c']}]
+      datasets:[{data:Object.values(resultCounts), backgroundColor:['#4caf7d','#3f9d6b','#4c8ec9','#e0a83c','#d9634c']}]
     },
     options:{ responsive:true, plugins:{legend:{position:'bottom', labels:{color:'#f2ede0'}}} }
+  });
+}
+
+/* ===================== COMMERCIAUX (KPI comparatif) ===================== */
+let chartCommerciauxCompareInstance=null;
+function computeCommercialStats(commercial){
+  const all = Object.values(loadControl()).filter(v=>v.commercial===commercial);
+  const nb = all.length;
+
+  const now = new Date();
+  const weekAgo = new Date(now); weekAgo.setDate(now.getDate()-7);
+  const monthAgo = new Date(now); monthAgo.setDate(now.getDate()-30);
+  const visitesSemaine = all.filter(v=> new Date(v.date) >= weekAgo && new Date(v.date) <= now).length;
+  const visitesMois = all.filter(v=> new Date(v.date) >= monthAgo && new Date(v.date) <= now).length;
+
+  const ventes = all.filter(v=>v.resultat==='Vente').length;
+  const ouvertures = all.filter(v=>v.resultat==='Ouverture de compte remplie').length;
+  const devis = all.filter(v=>v.resultat==='Devis établi').length;
+  const sansSuite = all.filter(v=>v.resultat==='Sans suite').length;
+  const conclu = ventes + ouvertures;
+  const taux = nb ? Math.round((conclu/nb)*100) : 0;
+
+  const relancesEnAttente = all.filter(v=>v.relance && v.relanceDate && new Date(v.relanceDate) >= new Date(new Date().toDateString())).length;
+
+  const clientsDistincts = new Set(all.map(v=>v.client)).size;
+  const clientsDormants = getDormantClients(all).length;
+
+  let moyenneSemaine = 0;
+  if(nb){
+    const dates = all.map(v=>new Date(v.date)).sort((a,b)=>a-b);
+    const premiereDate = dates[0];
+    const semainesEcoulees = Math.max(1, Math.ceil((now - premiereDate) / (7*86400000)));
+    moyenneSemaine = Math.round((nb / semainesEcoulees) * 10) / 10;
+  }
+
+  return { commercial, nb, visitesSemaine, visitesMois, ventes, ouvertures, devis, sansSuite, relancesEnAttente, taux, clientsDistincts, clientsDormants, moyenneSemaine };
+}
+function commCardHtml(s){
+  return `<div class="comm-card">
+    <h3>${escapeHtml(s.commercial)}</h3>
+    <div class="cc-taux">${s.taux}%</div>
+    <div class="cc-taux-label">Taux de transformation</div>
+    <div class="comm-row"><span class="k">Visites totales</span><span class="v">${s.nb}</span></div>
+    <div class="comm-row"><span class="k">Visites cette semaine</span><span class="v">${s.visitesSemaine}</span></div>
+    <div class="comm-row"><span class="k">Visites ce mois</span><span class="v">${s.visitesMois}</span></div>
+    <div class="comm-row"><span class="k">Moyenne / semaine</span><span class="v">${s.moyenneSemaine}</span></div>
+    <div class="comm-row"><span class="k">Ventes</span><span class="v">${s.ventes}</span></div>
+    <div class="comm-row"><span class="k">Ouvertures de compte</span><span class="v">${s.ouvertures}</span></div>
+    <div class="comm-row"><span class="k">Devis établis</span><span class="v">${s.devis}</span></div>
+    <div class="comm-row"><span class="k">Sans suite</span><span class="v">${s.sansSuite}</span></div>
+    <div class="comm-row"><span class="k">Relances en attente</span><span class="v">${s.relancesEnAttente}</span></div>
+    <div class="comm-row"><span class="k">Clients suivis</span><span class="v">${s.clientsDistincts}</span></div>
+    <div class="comm-row"><span class="k">Clients dormants (&gt;2 mois)</span><span class="v ${s.clientsDormants?'bad':''}">${s.clientsDormants}</span></div>
+  </div>`;
+}
+function renderCommerciauxView(){
+  const sC = computeCommercialStats('Clément');
+  const sL = computeCommercialStats('Lorris');
+
+  document.getElementById('commCardsWrap').innerHTML = commCardHtml(sC) + commCardHtml(sL);
+
+  document.getElementById('tauxCompareWrap').innerHTML = `
+    <div class="pc-label"><span>Clément</span><span>${sC.taux}%</span></div>
+    <div class="pc-bar-bg"><div class="pc-bar-fill" style="width:${sC.taux}%;background:var(--amber);"></div></div>
+    <div class="pc-label"><span>Lorris</span><span>${sL.taux}%</span></div>
+    <div class="pc-bar-bg"><div class="pc-bar-fill" style="width:${sL.taux}%;background:var(--ok);"></div></div>
+  `;
+
+  const ctx = document.getElementById('chartCommerciauxCompare').getContext('2d');
+  if(chartCommerciauxCompareInstance) chartCommerciauxCompareInstance.destroy();
+  chartCommerciauxCompareInstance = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels:['Visites', 'Ventes', 'Ouvertures', 'Devis établis', 'Relances en attente'],
+      datasets:[
+        {label:'Clément', data:[sC.nb, sC.ventes, sC.ouvertures, sC.devis, sC.relancesEnAttente], backgroundColor:'#c9a84c'},
+        {label:'Lorris', data:[sL.nb, sL.ventes, sL.ouvertures, sL.devis, sL.relancesEnAttente], backgroundColor:'#4caf7d'}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{labels:{color:'#f2ede0'}}},
+      scales:{
+        x:{ticks:{color:'#9aa2b8'}, grid:{color:'#232b40'}},
+        y:{ticks:{color:'#9aa2b8'}, grid:{color:'#232b40'}, beginAtZero:true}
+      }
+    }
   });
 }
 
@@ -839,7 +1004,8 @@ function renderClientView(){
   const visites = all.filter(v=>v.client===client).sort((a,b)=> b.date.localeCompare(a.date));
   const nb = visites.length;
   const dernier = visites[0];
-  const conclu = visites.filter(v=>v.resultat==='RDV concluant'||v.resultat==='Vente').length;
+  const conclu = visites.filter(v=>isConversion(v.resultat)).length;
+  const devis = visites.filter(v=>v.resultat==='Devis établi').length;
   const relanceEnAttente = visites.find(v=>v.relance && v.relanceDate && new Date(v.relanceDate) >= new Date(new Date().toDateString()));
   const commerciaux = Array.from(new Set(visites.map(v=>v.commercial)));
   const joursDepuis = dernier ? daysSince(dernier.date) : null;
@@ -858,7 +1024,8 @@ function renderClientView(){
       <div class="cs-row"><span class="k">Commercial(aux) suivi(s)</span><span class="v">${escapeHtml(commerciaux.join(', '))}</span></div>
       <div class="cs-row"><span class="k">Dernière visite</span><span class="v">${dernier ? formatDateFR(dernier.date) : '—'}</span></div>
       <div class="cs-row"><span class="k">Dernier résultat</span><span class="v">${dernier ? escapeHtml(dernier.resultat) : '—'}</span></div>
-      <div class="cs-row"><span class="k">RDV / ventes conclus</span><span class="v">${conclu}</span></div>
+      <div class="cs-row"><span class="k">Ventes / ouvertures de compte</span><span class="v">${conclu}</span></div>
+      <div class="cs-row"><span class="k">Devis établis</span><span class="v">${devis}</span></div>
       <div class="cs-row"><span class="k">Relance en attente</span><span class="v">${relanceEnAttente ? formatDateFR(relanceEnAttente.relanceDate) : 'Aucune'}</span></div>
     </div>
     <div class="section-title">Historique complet</div>
@@ -866,7 +1033,7 @@ function renderClientView(){
   `;
 }
 
-/* ===================== PDF HEBDO ===================== */
+/* ===================== PDF HEBDO / MENSUEL ===================== */
 function isoWeekToRange(weekStr){
   // weekStr format: "2026-W28"
   const [yearStr, weekNoStr] = weekStr.split('-W');
@@ -879,11 +1046,15 @@ function isoWeekToRange(weekStr){
   const sunday = new Date(monday); sunday.setUTCDate(monday.getUTCDate()+6);
   return {start: monday, end: sunday};
 }
-function generatePDF(){
-  const commercial = document.getElementById('pdfCommercial').value;
-  const weekVal = document.getElementById('pdfWeek').value;
-  if(!weekVal){ alert('Merci de sélectionner une semaine.'); return; }
-  const {start, end} = isoWeekToRange(weekVal);
+function monthToRange(monthStr){
+  // monthStr format: "2026-07"
+  const [yearStr, monthNoStr] = monthStr.split('-');
+  const year = parseInt(yearStr,10), monthNo = parseInt(monthNoStr,10);
+  const start = new Date(Date.UTC(year, monthNo-1, 1));
+  const end = new Date(Date.UTC(year, monthNo, 0));
+  return {start, end};
+}
+function buildVisitesPDF(commercial, start, end, periodLabel, filename){
   const all = Object.values(loadControl());
   const visites = all.filter(v=>{
     if(v.commercial!==commercial) return false;
@@ -904,19 +1075,22 @@ function generatePDF(){
   doc.text('GIVEDIS — Suivi Visites Clients', 14, 15);
   doc.setFontSize(11);
   doc.setTextColor(255,255,255);
-  doc.text(`${commercial} — semaine du ${formatDateFR(start.toISOString().slice(0,10))} au ${formatDateFR(end.toISOString().slice(0,10))}`, 14, 24);
+  doc.text(`${commercial} — ${periodLabel}`, 14, 24);
 
   let y = 42;
   doc.setTextColor(20,20,20);
   doc.setFontSize(13);
   doc.setFont('helvetica','bold');
-  doc.text('Synthèse de la semaine', 14, y);
+  doc.text('Synthèse de la période', 14, y);
   y += 4;
 
   const nb = visites.length;
-  const conclu = visites.filter(v=>v.resultat==='RDV concluant'||v.resultat==='Vente').length;
+  const ventes = visites.filter(v=>v.resultat==='Vente').length;
+  const ouvertures = visites.filter(v=>v.resultat==='Ouverture de compte remplie').length;
+  const devis = visites.filter(v=>v.resultat==='Devis établi').length;
   const relance = visites.filter(v=>v.resultat==='À relancer').length;
   const sansSuite = visites.filter(v=>v.resultat==='Sans suite').length;
+  const conclu = ventes + ouvertures;
   const taux = nb ? Math.round((conclu/nb)*100) : 0;
 
   doc.autoTable({
@@ -924,10 +1098,12 @@ function generatePDF(){
     head: [['Indicateur','Valeur']],
     body: [
       ['Visites réalisées', String(nb)],
-      ['RDV concluants / ventes', String(conclu)],
+      ['Ventes', String(ventes)],
+      ['Ouvertures de compte remplies', String(ouvertures)],
+      ['Devis établis', String(devis)],
       ['À relancer', String(relance)],
       ['Sans suite', String(sansSuite)],
-      ['Taux de transformation', taux+'%']
+      ['Taux de transformation (ventes + ouvertures)', taux+'%']
     ],
     theme:'plain',
     headStyles:{fillColor:amber, textColor:[17,23,38], fontStyle:'bold'},
@@ -943,7 +1119,7 @@ function generatePDF(){
   if(!visites.length){
     doc.setFont('helvetica','normal');
     doc.setFontSize(10);
-    doc.text('Aucune visite enregistrée sur cette semaine.', 14, y+8);
+    doc.text('Aucune visite enregistrée sur cette période.', 14, y+8);
   } else {
     doc.autoTable({
       startY: y+4,
@@ -952,12 +1128,30 @@ function generatePDF(){
       theme:'striped',
       headStyles:{fillColor:navy, textColor:255},
       styles:{fontSize:9, cellPadding:3, overflow:'linebreak'},
-      columnStyles:{4:{cellWidth:70}},
+      columnStyles:{4:{cellWidth:65}},
       margin:{left:14,right:14}
     });
   }
 
-  doc.save(`Visites_${commercial}_${weekVal}.pdf`);
+  doc.save(filename);
+}
+function generatePDFWeekly(){
+  const commercial = document.getElementById('pdfCommercial').value;
+  const weekVal = document.getElementById('pdfWeek').value;
+  if(!weekVal){ alert('Merci de sélectionner une semaine.'); return; }
+  const {start, end} = isoWeekToRange(weekVal);
+  const periodLabel = `semaine du ${formatDateFR(start.toISOString().slice(0,10))} au ${formatDateFR(end.toISOString().slice(0,10))}`;
+  buildVisitesPDF(commercial, start, end, periodLabel, `Visites_${commercial}_${weekVal}.pdf`);
+}
+function generatePDFMonthly(){
+  const commercial = document.getElementById('pdfCommercialMois').value;
+  const monthVal = document.getElementById('pdfMois').value;
+  if(!monthVal){ alert('Merci de sélectionner un mois.'); return; }
+  const {start, end} = monthToRange(monthVal);
+  const moisLabels = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const [yearStr, monthNoStr] = monthVal.split('-');
+  const periodLabel = `${moisLabels[parseInt(monthNoStr,10)-1]} ${yearStr}`;
+  buildVisitesPDF(commercial, start, end, periodLabel, `Visites_${commercial}_${monthVal}.pdf`);
 }
 
 /* ===================== INIT ===================== */
