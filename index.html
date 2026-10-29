@@ -11,6 +11,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<meta name="theme-color" content="#05050e">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <style>
 :root{
   --navy-950:#05050e;
@@ -153,25 +158,64 @@ canvas{max-width:100%;}
 .progress-compare .pc-label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-lo);margin-bottom:5px;}
 .progress-compare .pc-bar-bg{background:var(--navy-800);border:1px solid var(--line);border-radius:999px;height:14px;overflow:hidden;margin-bottom:12px;}
 .progress-compare .pc-bar-fill{height:100%;border-radius:999px;background:var(--amber);transition:width .3s;}
+
+/* ---------- AJOUTS V2 ---------- */
+.login-box{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px;text-align:left;}
+.login-box .chip-group{justify-content:center;}
+.pin-input{width:100%;background:var(--navy-800);border:1px solid var(--line);color:var(--text-hi);padding:14px;border-radius:12px;font-size:26px;letter-spacing:.5em;text-align:center;font-family:'Rajdhani',sans-serif;}
+.pin-input:focus{outline:none;border-color:var(--amber);}
+.login-err{color:var(--bad);font-size:13px;min-height:18px;text-align:center;}
+.sync{font-size:10.5px;font-family:'Rajdhani',sans-serif;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:6px;color:var(--text-lo);margin-top:2px;}
+.sync i{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;}
+.sync.off i{background:var(--warn);}
+.sync.err i{background:var(--bad);}
+.tab .badge{display:inline-block;min-width:18px;padding:0 5px;margin-left:6px;border-radius:999px;background:var(--bad);color:#fff;font-size:11px;line-height:18px;text-align:center;}
+.tab.active .badge{background:var(--navy-950);color:var(--amber);}
+.req{color:var(--amber-bright);}
+.hint-small{font-size:11.5px;color:var(--text-lo);margin-top:5px;line-height:1.4;}
+.hist-box{background:var(--navy-900);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:12px;padding:12px 14px;margin:-4px 0 16px;}
+.hist-box .hb-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px;}
+.hist-box .hb-title{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--amber);font-weight:600;font-family:'Rajdhani',sans-serif;}
+.hist-box .hb-stats{font-size:12px;color:var(--text-lo);}
+.hist-item{border-top:1px solid var(--line);padding:8px 0;font-size:13px;}
+.hist-item:first-of-type{border-top:none;}
+.hist-item .hi-top{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.hist-item .hi-date{font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--text-hi);}
+.hist-item .hi-cr{color:var(--text-lo);margin-top:4px;line-height:1.45;}
+.link-btn{background:none;border:none;color:var(--amber);font-size:12.5px;cursor:pointer;padding:4px 0;font-family:'Rajdhani',sans-serif;font-weight:600;}
+.todo-group{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-lo);font-weight:600;margin:14px 0 8px;font-family:'Rajdhani',sans-serif;}
+.todo-card{background:var(--navy-800);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;}
+.todo-card.late{border-color:rgba(217,99,76,.55);}
+.todo-card.today{border-color:rgba(224,168,60,.6);}
+.todo-card .tc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.todo-card .tc-client{font-weight:700;font-size:14.5px;}
+.todo-card .tc-sub{font-size:12px;color:var(--text-lo);margin-top:4px;line-height:1.45;}
+.todo-actions{display:flex;gap:8px;margin-top:10px;}
+.btn-mini{background:var(--navy-700);border:1px solid var(--line);color:var(--text-hi);border-radius:8px;padding:7px 12px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Rajdhani',sans-serif;}
+.btn-mini.ok{border-color:var(--ok);color:var(--ok);}
+.btn-mini.amber{border-color:var(--amber);color:var(--amber);}
+.toast-v{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--navy-700);border:1px solid var(--amber);color:var(--text-hi);padding:11px 16px;border-radius:10px;font-size:13.5px;z-index:99;max-width:90vw;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+select option:disabled{color:#5d6478;}
+.chip.result-mute.selected{background:var(--text-lo);border-color:var(--text-lo);color:var(--navy-950);}
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- ============ LANDING ============ -->
+  <!-- ============ CONNEXION ============ -->
   <div id="landing">
     <div class="brand">GIVEDIS</div>
     <h1>Suivi Visites Clients</h1>
-    <p>Un seul outil, deux usages : la saisie terrain pour les commerciaux, et l'espace de contrôle pour la consolidation.</p>
-    <div class="landing-choices">
-      <button class="choice-btn" onclick="enterTerrain()">
-        <span class="ct">📍 Je suis commercial</span>
-        <span class="cd">Saisir mes visites du jour, exporter ma semaine</span>
-      </button>
-      <button class="choice-btn" onclick="enterControl()">
-        <span class="ct">🗂 Espace de contrôle</span>
-        <span class="cd">Importer, consolider, suivre les clients, générer les PDF</span>
-      </button>
+    <p>Choisis ton nom et tape ton code PIN. Tes visites sont enregistrées en ligne et arrivent directement dans GIVEDIS OS.</p>
+    <div class="login-box">
+      <div class="chip-group" id="loginWho">
+        <div class="chip" data-val="Clément" onclick="pickLogin(this)">Clément</div>
+        <div class="chip" data-val="Lorris" onclick="pickLogin(this)">Lorris</div>
+        <div class="chip" data-val="Julien" onclick="pickLogin(this)">Responsable</div>
+      </div>
+      <input class="pin-input" id="loginPin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="login-err" id="loginErr"></div>
+      <button class="btn-primary" id="loginBtn" onclick="doLogin()">Se connecter</button>
     </div>
   </div>
 
@@ -181,50 +225,48 @@ canvas{max-width:100%;}
       <div class="who">
         <span class="role">Terrain</span>
         <span class="name" id="terrainWhoName">—</span>
+        <span class="sync" id="syncBadge"><i></i><span>Connexion…</span></span>
       </div>
-      <button class="exit" onclick="goLanding()">Quitter</button>
+      <button class="exit" onclick="doLogout()">Déconnexion</button>
     </div>
     <div class="tabs">
       <button class="tab active" data-tp="saisie" onclick="terrainTab('saisie')">Saisie</button>
-      <button class="tab" data-tp="portefeuille" onclick="terrainTab('portefeuille')">Portefeuille</button>
+      <button class="tab" data-tp="afaire" onclick="terrainTab('afaire')">À faire<span class="badge" id="todoBadge" hidden>0</span></button>
       <button class="tab" data-tp="mesvisites" onclick="terrainTab('mesvisites')">Mes visites</button>
-      <button class="tab" data-tp="export" onclick="terrainTab('export')">Exporter</button>
+      <button class="tab" data-tp="portefeuille" onclick="terrainTab('portefeuille')">Portefeuille</button>
+      <button class="tab" data-tp="export" onclick="terrainTab('export')">Sauvegarde</button>
     </div>
     <div class="view">
 
       <div id="tp-saisie">
         <div class="field">
-          <label>Commercial</label>
-          <select id="fCommercial" onchange="setCommercialActif(this.value)">
-            <option value="Clément">Clément</option>
-            <option value="Lorris">Lorris</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Client / agence</label>
+          <label>Client / agence <span class="req">*</span></label>
           <select id="fClientSelect" onchange="onClientSelectChange()">
             <option value="">— Choisir dans le portefeuille —</option>
             <option value="__nouveau__">➕ Nouveau client (hors portefeuille)</option>
           </select>
         </div>
         <div class="field" id="fClientManualWrap" hidden>
-          <label>Nom du nouveau client / agence</label>
-          <input type="text" id="fClientManual" placeholder="Saisir le nom du client">
+          <label>Nom du nouveau client / agence <span class="req">*</span></label>
+          <input type="text" id="fClientManual" placeholder="Saisir le nom du client" oninput="onClientManualInput()">
+          <div class="hint-small" id="fClientManualHint"></div>
         </div>
+        <div id="clientHistory"></div>
         <div class="row2">
           <div class="field">
-            <label>Date</label>
+            <label>Date <span class="req">*</span></label>
             <input type="date" id="fDate">
           </div>
           <div class="field">
             <label>Type de visite</label>
             <select id="fType">
-              <option>Prospection</option>
-              <option>Suivi</option>
-              <option>SAV</option>
-              <option>Présentation produit</option>
-              <option>Autre</option>
+              <option value="Prospection">Prospection</option>
+              <option value="Suivi">Suivi</option>
+              <option value="SAV">SAV</option>
+              <option value="Présentation produit">Présentation produit</option>
+              <option value="Autre">Autre</option>
             </select>
+            <div class="hint-small" id="fTypeHint" hidden>Client déjà en portefeuille : la prospection n'est pas possible.</div>
           </div>
         </div>
         <div class="field">
@@ -232,10 +274,10 @@ canvas{max-width:100%;}
           <textarea id="fCompteRendu" placeholder="Ce qui s'est dit, ce qui a été montré, décisions prises..."></textarea>
         </div>
         <div class="field">
-          <label>Contact sur place (optionnel)</label>
+          <label>Contact sur place <span class="req">*</span> <span style="font-weight:400;">(nom et prénom obligatoires)</span></label>
           <div class="row2">
-            <input type="text" id="fContactNom" placeholder="Nom">
-            <input type="text" id="fContactPrenom" placeholder="Prénom">
+            <input type="text" id="fContactNom" placeholder="Nom *" autocapitalize="characters">
+            <input type="text" id="fContactPrenom" placeholder="Prénom *" autocapitalize="words">
           </div>
           <div class="row2" style="margin-top:10px;">
             <input type="tel" id="fContactTel" placeholder="Téléphone">
@@ -243,25 +285,43 @@ canvas{max-width:100%;}
           </div>
         </div>
         <div class="field">
-          <label>Résultat</label>
+          <label>Résultat <span class="req">*</span></label>
           <div class="chip-group" id="fResultatGroup">
-            <div class="chip result-ok" data-val="Vente" onclick="selectChip(this,'fResultatGroup')">Vente</div>
-            <div class="chip result-ok" data-val="Ouverture de compte remplie" onclick="selectChip(this,'fResultatGroup')">Ouverture de compte remplie</div>
-            <div class="chip result-devis" data-val="Devis établi" onclick="selectChip(this,'fResultatGroup')">Devis établi</div>
-            <div class="chip result-relance" data-val="À relancer" onclick="selectChip(this,'fResultatGroup')">À relancer</div>
-            <div class="chip result-sansuite" data-val="Sans suite" onclick="selectChip(this,'fResultatGroup')">Sans suite</div>
+            <div class="chip result-ok" data-val="Vente" onclick="selectResultat(this)">Vente</div>
+            <div class="chip result-ok" data-val="Prise de commande" onclick="selectResultat(this)">Prise de commande</div>
+            <div class="chip result-ok" data-val="Ouverture de compte remplie" onclick="selectResultat(this)">Ouverture de compte remplie</div>
+            <div class="chip result-devis" data-val="Devis établi" onclick="selectResultat(this)">Devis établi</div>
+            <div class="chip result-mute" data-val="Suivi simple" onclick="selectResultat(this)">Suivi simple</div>
+            <div class="chip result-relance" data-val="À relancer" onclick="selectResultat(this)">À relancer</div>
+            <div class="chip result-sansuite" data-val="Sans suite" onclick="selectResultat(this)">Sans suite</div>
           </div>
         </div>
-        <div class="field" id="relanceDateWrap" hidden>
-          <label>Date de relance prévue</label>
-          <input type="date" id="fRelanceDate">
+        <div class="field" id="montantWrap" hidden>
+          <label id="montantLabel">Montant (€ HT) <span class="req">*</span></label>
+          <input type="number" id="fMontant" inputmode="decimal" min="0" step="0.01" placeholder="0,00">
+          <div class="hint-small">Information de suivi uniquement : ce montant n'entre pas dans le CA ni dans les primes.</div>
         </div>
-        <button class="btn-primary" onclick="addVisite()">Enregistrer la visite</button>
+        <div class="field" id="relanceDateWrap">
+          <label id="relanceLabel">Relance prévue le (optionnel)</label>
+          <input type="date" id="fRelanceDate">
+          <div class="hint-small">La relance apparaîtra dans l'onglet « À faire » à cette date.</div>
+        </div>
+        <div class="hint-small" id="relanceSourceInfo" hidden style="margin-bottom:12px;"></div>
+        <button class="btn-primary" id="saveBtn" onclick="addVisite()">Enregistrer la visite</button>
+      </div>
+
+      <div id="tp-afaire" hidden>
+        <div class="section-title">Mes relances</div>
+        <div id="todoRelances"></div>
+        <div class="section-title">Clients à revoir <span style="color:var(--text-lo);text-transform:none;letter-spacing:0;">— pas de visite depuis 30 jours ou plus</span></div>
+        <div id="todoARevoir"></div>
+        <div class="section-title">Jamais visités</div>
+        <div id="todoJamais"></div>
       </div>
 
       <div id="tp-portefeuille" hidden>
         <div class="section-title">Importer mon portefeuille</div>
-        <p style="color:var(--text-lo);font-size:13px;line-height:1.5;">Importe la liste de tes clients/agences (fichier CSV ou JSON avec au moins une colonne "client"). Elle alimentera la liste déroulante lors de la saisie d'une visite. Les nouveaux clients ajoutés manuellement rejoignent aussi automatiquement ce portefeuille.</p>
+        <p style="color:var(--text-lo);font-size:13px;line-height:1.5;">Importe la liste de tes clients/agences (fichier CSV ou JSON avec au moins une colonne "client"). Les nouveaux clients saisis manuellement rejoignent aussi automatiquement ce portefeuille. Ton portefeuille est enregistré en ligne.</p>
         <div class="dropzone" onclick="document.getElementById('portfolioInput').click()">
           Cliquer pour importer mon portefeuille<br>(CSV / JSON)
         </div>
@@ -269,21 +329,18 @@ canvas{max-width:100%;}
         <div class="import-log" id="portfolioImportLog"></div>
         <div class="section-title" style="margin-top:22px;">Mon portefeuille actuel</div>
         <div id="portfolioList"></div>
-        <button class="btn-secondary" onclick="clearPortfolio()" style="border-color:var(--bad);color:var(--bad);margin-top:14px;">Vider mon portefeuille</button>
       </div>
 
       <div id="tp-mesvisites" hidden>
-        <div class="section-title">Historique (cet appareil)</div>
+        <div class="section-title">Mes visites</div>
         <div id="mesVisitesList"></div>
       </div>
 
       <div id="tp-export" hidden>
-        <div class="section-title">Exporter mes visites</div>
-        <p style="color:var(--text-lo);font-size:13px;line-height:1.5;">Envoie ce fichier chaque semaine à ton responsable pour qu'il consolide tes visites dans son espace de contrôle.</p>
-        <button class="btn-primary" onclick="exportTerrain('json')">Exporter en JSON (recommandé)</button>
+        <div class="section-title">Sauvegarde de mes visites</div>
+        <p style="color:var(--text-lo);font-size:13px;line-height:1.5;">Tes visites partent automatiquement en ligne et arrivent dans GIVEDIS OS : tu n'as plus rien à envoyer. Ces exports servent seulement de copie de sécurité.</p>
+        <button class="btn-secondary" onclick="exportTerrain('json')">Exporter en JSON</button>
         <button class="btn-secondary" onclick="exportTerrain('csv')">Exporter en CSV</button>
-        <div class="section-title" style="margin-top:26px;">Zone danger</div>
-        <button class="btn-secondary" onclick="clearTerrain()" style="border-color:var(--bad);color:var(--bad);">Effacer mes visites de cet appareil</button>
       </div>
 
     </div>
@@ -295,8 +352,9 @@ canvas{max-width:100%;}
       <div class="who">
         <span class="role">Contrôle</span>
         <span class="name">Espace responsable</span>
+        <span class="sync" id="syncBadgeCtrl"><i></i><span>Connexion…</span></span>
       </div>
-      <button class="exit" onclick="goLanding()">Quitter</button>
+      <button class="exit" onclick="doLogout()">Déconnexion</button>
     </div>
     <div class="tabs">
       <button class="tab active" data-cp="dashboard" onclick="controlTab('dashboard')">Dashboard</button>
@@ -304,7 +362,7 @@ canvas{max-width:100%;}
       <button class="tab" data-cp="liste" onclick="controlTab('liste')">Visites</button>
       <button class="tab" data-cp="clients" onclick="controlTab('clients')">Par client</button>
       <button class="tab" data-cp="pdf" onclick="controlTab('pdf')">PDF hebdo</button>
-      <button class="tab" data-cp="import" onclick="controlTab('import')">Import</button>
+      <button class="tab" data-cp="import" onclick="controlTab('import')">Anciens fichiers</button>
     </div>
     <div class="view">
 
@@ -313,7 +371,7 @@ canvas{max-width:100%;}
           <div class="kpi"><div class="stat-num" id="kpiTotal">0</div><div class="stat-label">Visites totales</div></div>
           <div class="kpi"><div class="stat-num" id="kpiSemaine">0</div><div class="stat-label">Cette semaine</div></div>
           <div class="kpi"><div class="stat-num" id="kpiTransfo">0%</div><div class="stat-label">Taux transformation</div></div>
-          <div class="kpi"><div class="stat-num" id="kpiRelances">0</div><div class="stat-label">Relances en attente</div></div>
+          <div class="kpi"><div class="stat-num" id="kpiRelances">0</div><div class="stat-label">Relances ouvertes</div></div>
           <div class="kpi" id="kpiDormantsCard" style="grid-column:1 / -1;border-color:var(--bad);cursor:pointer;" onclick="controlTab('clients')">
             <div class="stat-num" id="kpiDormants" style="color:var(--bad);">0</div>
             <div class="stat-label">⚠ Clients non visités depuis plus de 2 mois</div>
@@ -327,9 +385,7 @@ canvas{max-width:100%;}
 
       <div id="cp-commerciaux" hidden>
         <div class="comm-grid" id="commCardsWrap"></div>
-
         <div class="progress-compare" id="tauxCompareWrap"></div>
-
         <div class="section-title">Comparatif (visites, ventes, ouvertures, devis, relances)</div>
         <canvas id="chartCommerciauxCompare" height="220"></canvas>
       </div>
@@ -343,15 +399,10 @@ canvas{max-width:100%;}
           </select>
           <select id="filtResultat" onchange="renderListe()">
             <option value="">Tous les résultats</option>
-            <option value="Vente">Vente</option>
-            <option value="Ouverture de compte remplie">Ouverture de compte remplie</option>
-            <option value="Devis établi">Devis établi</option>
-            <option value="À relancer">À relancer</option>
-            <option value="Sans suite">Sans suite</option>
           </select>
           <select id="filtRelance" onchange="renderListe()">
             <option value="">Toutes</option>
-            <option value="enattente">Relances en attente</option>
+            <option value="enattente">Relances ouvertes</option>
           </select>
         </div>
         <div id="listeVisites"></div>
@@ -382,7 +433,6 @@ canvas{max-width:100%;}
           </div>
           <button class="btn-primary" onclick="generatePDFWeekly()">Générer le PDF de la semaine</button>
         </div>
-
         <div class="section-title">PDF mensuel</div>
         <div class="pdf-form">
           <div class="field">
@@ -401,15 +451,15 @@ canvas{max-width:100%;}
       </div>
 
       <div id="cp-import" hidden>
-        <div class="section-title">Importer les visites</div>
-        <p style="color:var(--text-lo);font-size:13px;line-height:1.5;">Sélectionne un ou plusieurs fichiers (JSON ou CSV) envoyés par Clément et Lorris. Les imports se cumulent semaine après semaine, sans doublons.</p>
+        <div class="section-title">Importer d'anciens fichiers</div>
+        <p style="color:var(--text-lo);font-size:13px;line-height:1.5;">Les visites arrivent désormais toutes seules. Cet import ne sert plus que pour d'anciens exports JSON/CSV d'avant la synchronisation. Ils restent sur cet appareil et s'ajoutent aux visites en ligne, sans doublons.</p>
         <div class="dropzone" onclick="document.getElementById('importInput').click()">
           Cliquer pour choisir un ou plusieurs fichiers<br>(JSON / CSV)
         </div>
         <input type="file" id="importInput" accept=".json,.csv" multiple hidden onchange="handleImport(this.files)">
         <div class="import-log" id="importLog"></div>
         <div class="section-title" style="margin-top:26px;">Zone danger</div>
-        <button class="btn-secondary" onclick="clearControl()" style="border-color:var(--bad);color:var(--bad);">Effacer toutes les données consolidées</button>
+        <button class="btn-secondary" onclick="clearControl()" style="border-color:var(--bad);color:var(--bad);">Effacer les anciens fichiers importés sur cet appareil</button>
       </div>
 
     </div>
@@ -418,106 +468,269 @@ canvas{max-width:100%;}
 </div>
 
 <script>
-/* ===================== STORAGE HELPERS ===================== */
-const LS_TERRAIN = 'gv_terrain_visites';
-const LS_CONTROL = 'gv_control_store';
-const LS_COMMERCIAL_ACTIF = 'gv_commercial_actif';
-const LS_PORTFOLIO = 'gv_portfolio';
+/* ===================== FIREBASE ===================== */
+const FB_CONFIG = {
+  apiKey: "AIzaSyA1C9-0Wr4AmSUtWnaTiaR7mPwQhdlmj-k",
+  authDomain: "ultimate-crm-givedis-b27f8.firebaseapp.com",
+  projectId: "ultimate-crm-givedis-b27f8",
+  storageBucket: "ultimate-crm-givedis-b27f8.firebasestorage.app",
+  messagingSenderId: "1014289476140",
+  appId: "1:1014289476140:web:229f0573bdcd0411c97f89"
+};
+/* Identifiants de connexion : chacun tape seulement son PIN. */
+const COMPTES = {
+  'Clément': 'clement@givedis.app',
+  'Lorris':  'lorris@givedis.app',
+  'Julien':  'julien@givedis.app'
+};
+const ADMIN_EMAIL = 'julien@givedis.app';
 
-function loadTerrain(){ try{ return JSON.parse(localStorage.getItem(LS_TERRAIN)) || []; }catch(e){ return []; } }
-function saveTerrain(list){ localStorage.setItem(LS_TERRAIN, JSON.stringify(list)); }
-function loadControl(){ try{ return JSON.parse(localStorage.getItem(LS_CONTROL)) || {}; }catch(e){ return {}; } }
-function saveControl(store){ localStorage.setItem(LS_CONTROL, JSON.stringify(store)); }
-function loadPortfolio(){ try{ return JSON.parse(localStorage.getItem(LS_PORTFOLIO)) || {'Clément':[], 'Lorris':[]}; }catch(e){ return {'Clément':[], 'Lorris':[]}; } }
-function savePortfolio(p){ localStorage.setItem(LS_PORTFOLIO, JSON.stringify(p)); }
+firebase.initializeApp(FB_CONFIG);
+const fbAuth = firebase.auth();
+const fbDb = firebase.firestore();
+/* Cache local : saisie possible sans réseau, envoi automatique au retour. */
+fbDb.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+
+/* ===================== ÉTAT ===================== */
+const LS_CONTROL = 'gv_control_store';      // anciens fichiers importés (espace contrôle)
+const LS_TERRAIN_OLD = 'gv_terrain_visites'; // visites d'avant la synchro (migration)
+const LS_PORTFOLIO_OLD = 'gv_portfolio';
+const LS_LAST_LOGIN = 'gv_last_login';
+
+let ME = null;            // {nom, uid, admin}
+let VISITES = [];         // visites du commercial connecté (en ligne)
+let PORTFOLIO = [];       // [{client}]
+let CONTROL_LIVE = {};    // espace contrôle : toutes les visites en ligne
+let UNSUBS = [];
+let SYNC = {pending:false, fromCache:true, error:''};
+let RELANCE_SOURCE = null; // id de la relance traitée depuis « À faire »
+let LOGIN_WHO = null;
 
 function uid(){ return 'v_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
-
-/* ===================== NAVIGATION ===================== */
-function goLanding(){
-  document.getElementById('landing').hidden = false;
-  document.getElementById('terrain').hidden = true;
-  document.getElementById('control').hidden = true;
-}
-function enterTerrain(){
-  document.getElementById('landing').hidden = true;
-  document.getElementById('terrain').hidden = false;
-  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
-  document.getElementById('fCommercial').value = actif;
-  document.getElementById('terrainWhoName').textContent = actif;
-  document.getElementById('fDate').value = todayISO();
-  refreshClientSelect();
-  renderMesVisites();
-}
-function enterControl(){
-  document.getElementById('landing').hidden = true;
-  document.getElementById('control').hidden = false;
-  renderDashboard();
-  populateClientSelect();
-}
-function setCommercialActif(val){
-  localStorage.setItem(LS_COMMERCIAL_ACTIF, val);
-  document.getElementById('terrainWhoName').textContent = val;
-  refreshClientSelect();
-  renderMesVisites();
-}
-function todayISO(){ return new Date().toISOString().slice(0,10); }
-
-function terrainTab(tp){
-  document.querySelectorAll('#terrain .tab').forEach(t=>t.classList.toggle('active', t.dataset.tp===tp));
-  document.getElementById('tp-saisie').hidden = tp!=='saisie';
-  document.getElementById('tp-portefeuille').hidden = tp!=='portefeuille';
-  document.getElementById('tp-mesvisites').hidden = tp!=='mesvisites';
-  document.getElementById('tp-export').hidden = tp!=='export';
-  if(tp==='mesvisites') renderMesVisites();
-  if(tp==='portefeuille') renderPortfolioList();
-}
-function controlTab(cp){
-  document.querySelectorAll('#control .tab').forEach(t=>t.classList.toggle('active', t.dataset.cp===cp));
-  document.getElementById('cp-dashboard').hidden = cp!=='dashboard';
-  document.getElementById('cp-commerciaux').hidden = cp!=='commerciaux';
-  document.getElementById('cp-liste').hidden = cp!=='liste';
-  document.getElementById('cp-clients').hidden = cp!=='clients';
-  document.getElementById('cp-pdf').hidden = cp!=='pdf';
-  document.getElementById('cp-import').hidden = cp!=='import';
-  if(cp==='dashboard') renderDashboard();
-  if(cp==='commerciaux') renderCommerciauxView();
-  if(cp==='liste') renderListe();
-  if(cp==='clients') { populateClientSelect(); renderClientView(); }
+function todayISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function normKey(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); }
+function jsArg(s){ return encodeURIComponent(String(s||'')).replace(/'/g,'%27'); }
+function eur(n){ const x=Number(n)||0; return x.toLocaleString('fr-FR',{minimumFractionDigits:(x%1?2:0),maximumFractionDigits:2})+' €'; }
+function isoDaysAgo(n){ const d=new Date(); d.setDate(d.getDate()-n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function toast(msg){
+  const el = document.createElement('div'); el.className='toast-v'; el.textContent=msg;
+  document.body.appendChild(el); setTimeout(()=>el.remove(), 3200);
 }
 
-/* ===================== TERRAIN: SAISIE ===================== */
-function selectChip(el, groupId){
-  document.querySelectorAll('#'+groupId+' .chip').forEach(c=>c.classList.remove('selected'));
+/* ===================== CONNEXION ===================== */
+function pickLogin(el){
+  document.querySelectorAll('#loginWho .chip').forEach(c=>c.classList.remove('selected'));
   el.classList.add('selected');
-  document.getElementById('relanceDateWrap').hidden = el.dataset.val !== 'À relancer';
+  LOGIN_WHO = el.dataset.val;
+  document.getElementById('loginErr').textContent = '';
+  document.getElementById('loginPin').focus();
 }
-function refreshClientSelect(){
-  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
-  const portfolio = loadPortfolio();
-  const names = Array.from(new Set((portfolio[actif]||[]).map(c=>c.client))).sort((a,b)=>a.localeCompare(b));
+function doLogin(){
+  const pin = document.getElementById('loginPin').value.trim();
+  const err = document.getElementById('loginErr');
+  if(!LOGIN_WHO){ err.textContent = 'Choisis ton nom.'; return; }
+  if(!pin){ err.textContent = 'Tape ton code PIN.'; return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Connexion…';
+  fbAuth.signInWithEmailAndPassword(COMPTES[LOGIN_WHO], pin)
+    .then(()=>{ try{ localStorage.setItem(LS_LAST_LOGIN, LOGIN_WHO); }catch(e){} document.getElementById('loginPin').value=''; })
+    .catch(e=>{
+      const c = e && e.code || '';
+      err.textContent = (c.includes('network') ? 'Pas de réseau : la première connexion demande internet.'
+        : c.includes('too-many') ? 'Trop d\'essais. Patiente quelques minutes.'
+        : 'Code PIN incorrect.');
+    })
+    .finally(()=>{ btn.disabled=false; btn.textContent='Se connecter'; });
+}
+function doLogout(){
+  if(!confirm('Se déconnecter ?')) return;
+  fbAuth.signOut();
+}
+function stopListeners(){ UNSUBS.forEach(u=>{ try{u();}catch(e){} }); UNSUBS = []; }
+
+fbAuth.onAuthStateChanged(user=>{
+  stopListeners();
+  VISITES = []; PORTFOLIO = []; CONTROL_LIVE = {};
+  if(!user){ ME = null; showScreen('landing'); preselectLogin(); return; }
+  const email = (user.email||'').toLowerCase();
+  if(email === ADMIN_EMAIL){
+    ME = {nom:'Julien', uid:user.uid, admin:true};
+    showScreen('control'); startControl();
+  } else {
+    const nom = Object.keys(COMPTES).find(k=>COMPTES[k]===email) || email;
+    ME = {nom, uid:user.uid, admin:false};
+    showScreen('terrain'); startTerrain();
+  }
+});
+function preselectLogin(){
+  let last = null; try{ last = localStorage.getItem(LS_LAST_LOGIN); }catch(e){}
+  const el = last && document.querySelector(`#loginWho .chip[data-val="${last}"]`);
+  if(el) pickLogin(el);
+}
+function showScreen(id){
+  ['landing','terrain','control'].forEach(s=>document.getElementById(s).hidden = (s!==id));
+}
+
+/* ===================== SYNCHRO (badge) ===================== */
+function renderSync(){
+  const ids = ['syncBadge','syncBadgeCtrl'];
+  let cls='', txt='';
+  if(SYNC.error){ cls='err'; txt='Erreur de synchro'; }
+  else if(!navigator.onLine){ cls='off'; txt = SYNC.pending ? 'Hors ligne · envoi en attente' : 'Hors ligne'; }
+  else if(SYNC.pending){ cls='off'; txt='Envoi en cours…'; }
+  else { txt='Synchronisé'; }
+  ids.forEach(id=>{ const el=document.getElementById(id); if(!el) return; el.className='sync '+cls; el.querySelector('span').textContent=txt; });
+}
+window.addEventListener('online', renderSync);
+window.addEventListener('offline', renderSync);
+
+/* ===================== TERRAIN ===================== */
+function startTerrain(){
+  document.getElementById('terrainWhoName').textContent = ME.nom;
+  document.getElementById('fDate').value = todayISO();
+  terrainTab('saisie');
+  const u1 = fbDb.collection('visites').where('uid','==',ME.uid)
+    .onSnapshot({includeMetadataChanges:true}, snap=>{
+      VISITES = snap.docs.map(d=>d.data());
+      SYNC.pending = snap.metadata.hasPendingWrites; SYNC.fromCache = snap.metadata.fromCache; SYNC.error='';
+      renderSync(); refreshTerrainViews();
+    }, e=>{ SYNC.error = e.message; renderSync(); });
+  const u2 = fbDb.collection('portefeuilles').doc(ME.uid)
+    .onSnapshot(d=>{
+      PORTFOLIO = (d.exists && Array.isArray(d.data().clients)) ? d.data().clients : [];
+      refreshClientSelect(true); refreshTerrainViews();
+    }, e=>{ SYNC.error = e.message; renderSync(); });
+  UNSUBS.push(u1, u2);
+  migrateLocal();
+}
+/* Les visites saisies avant la synchro (sur ce téléphone) partent en ligne une seule fois. */
+function migrateLocal(){
+  const flag = 'gv_migrated_' + ME.uid;
+  try{ if(localStorage.getItem(flag)) return; }catch(e){ return; }
+  let olds = [], oldPf = [];
+  try{ olds = (JSON.parse(localStorage.getItem(LS_TERRAIN_OLD))||[]).filter(v=>v && v.commercial===ME.nom && v.id && v.client && v.date); }catch(e){}
+  try{ oldPf = ((JSON.parse(localStorage.getItem(LS_PORTFOLIO_OLD))||{})[ME.nom])||[]; }catch(e){}
+  const jobs = [];
+  if(olds.length){
+    for(let i=0;i<olds.length;i+=400){
+      const batch = fbDb.batch();
+      olds.slice(i,i+400).forEach(v=>{
+        batch.set(fbDb.collection('visites').doc(v.id), Object.assign({}, cleanVisite(v), {uid:ME.uid, commercial:ME.nom, migre:true}), {merge:true});
+      });
+      jobs.push(batch.commit());
+    }
+  }
+  if(oldPf.length){
+    const ref = fbDb.collection('portefeuilles').doc(ME.uid);
+    jobs.push(ref.get().then(d=>{
+      const cur = (d.exists && d.data().clients) || [];
+      const merged = mergeClients(cur, oldPf.map(x=>({client: typeof x==='string'?x:(x&&x.client)})).filter(x=>x.client));
+      return ref.set({uid:ME.uid, commercial:ME.nom, clients:merged, updatedAt:new Date().toISOString()});
+    }));
+  }
+  try{ localStorage.setItem(flag, '1'); }catch(e){}
+  if(olds.length) toast(olds.length+' ancienne(s) visite(s) de ce téléphone envoyée(s) en ligne');
+  Promise.all(jobs).catch(()=>{ try{ localStorage.removeItem(flag); }catch(e){} });
+}
+function cleanVisite(v){
+  return {
+    id:v.id, client:v.client, clientKey:normKey(v.client), date:v.date, type:v.type||'', compteRendu:v.compteRendu||'',
+    resultat:v.resultat||'', relance:!!(v.relance||v.relanceDate), relanceDate:v.relanceDate||null, relanceFaite:!!v.relanceFaite,
+    contactNom:v.contactNom||'', contactPrenom:v.contactPrenom||'', contactTel:v.contactTel||'', contactEmail:v.contactEmail||'',
+    montantDevis:+v.montantDevis||0, montantCommande:+v.montantCommande||0,
+    createdAt:v.createdAt||new Date().toISOString(), updatedAt:new Date().toISOString()
+  };
+}
+function mergeClients(a, b){
+  const out = a.slice(); const keys = new Set(a.map(c=>normKey(c.client)));
+  b.forEach(c=>{ const k=normKey(c.client); if(k && !keys.has(k)){ keys.add(k); out.push({client:String(c.client).trim()}); } });
+  return out;
+}
+function savePortfolio(list){
+  PORTFOLIO = list;
+  return fbDb.collection('portefeuilles').doc(ME.uid).set({uid:ME.uid, commercial:ME.nom, clients:list, updatedAt:new Date().toISOString()})
+    .catch(e=>toast('Portefeuille non enregistré : '+e.message));
+}
+
+let CURRENT_TP = 'saisie';
+function terrainTab(tp){
+  CURRENT_TP = tp;
+  document.querySelectorAll('#terrain .tab').forEach(t=>t.classList.toggle('active', t.dataset.tp===tp));
+  ['saisie','afaire','mesvisites','portefeuille','export'].forEach(x=>document.getElementById('tp-'+x).hidden = (x!==tp));
+  refreshTerrainViews();
+  window.scrollTo({top:0});
+}
+function refreshTerrainViews(){
+  if(!ME || ME.admin) return;
+  renderTodoBadge();
+  if(CURRENT_TP==='saisie') renderClientHistory();
+  if(CURRENT_TP==='afaire') renderAFaire();
+  if(CURRENT_TP==='mesvisites') renderMesVisites();
+  if(CURRENT_TP==='portefeuille') renderPortfolioList();
+}
+
+/* ---------- Saisie ---------- */
+function portfolioNames(){ return Array.from(new Set(PORTFOLIO.map(c=>c.client))).sort((a,b)=>a.localeCompare(b)); }
+function inPortfolio(name){ const k=normKey(name); return !!k && PORTFOLIO.some(c=>normKey(c.client)===k); }
+function refreshClientSelect(keep){
   const sel = document.getElementById('fClientSelect');
+  const cur = keep ? sel.value : '';
   sel.innerHTML = '<option value="">— Choisir dans le portefeuille —</option>' +
-    names.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('') +
+    portfolioNames().map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('') +
     '<option value="__nouveau__">➕ Nouveau client (hors portefeuille)</option>';
-  document.getElementById('fClientManualWrap').hidden = true;
-  document.getElementById('fClientManual').value = '';
+  if(cur && [...sel.options].some(o=>o.value===cur)) sel.value = cur;
+  if(!keep){ document.getElementById('fClientManualWrap').hidden = true; document.getElementById('fClientManual').value=''; }
+  updateTypeRule();
+}
+function currentClient(){
+  const v = document.getElementById('fClientSelect').value;
+  if(v==='__nouveau__') return document.getElementById('fClientManual').value.trim();
+  return v;
 }
 function onClientSelectChange(){
   const val = document.getElementById('fClientSelect').value;
   document.getElementById('fClientManualWrap').hidden = (val !== '__nouveau__');
+  if(val==='__nouveau__') document.getElementById('fClientManual').focus();
+  RELANCE_SOURCE = null; renderRelanceSource();
+  ['fContactNom','fContactPrenom','fContactTel','fContactEmail'].forEach(id=>document.getElementById(id).value='');
+  HIST_ALL=false; updateTypeRule(); renderClientHistory(true);
 }
-function addToPortfolio(commercial, clientName){
-  const portfolio = loadPortfolio();
-  if(!portfolio[commercial]) portfolio[commercial] = [];
-  const exists = portfolio[commercial].some(c=>c.client.toLowerCase() === clientName.toLowerCase());
-  if(!exists){ portfolio[commercial].push({client: clientName}); savePortfolio(portfolio); }
+function onClientManualInput(){
+  const name = document.getElementById('fClientManual').value.trim();
+  document.getElementById('fClientManualHint').textContent = inPortfolio(name) ? 'Ce client est déjà dans ton portefeuille.' : '';
+  updateTypeRule(); renderClientHistory();
+}
+/* Règle : pas de « Prospection » pour un client déjà en portefeuille. */
+function updateTypeRule(){
+  const sel = document.getElementById('fType');
+  const opt = sel.querySelector('option[value="Prospection"]');
+  const bloque = inPortfolio(currentClient());
+  opt.disabled = bloque;
+  opt.textContent = bloque ? 'Prospection (indisponible)' : 'Prospection';
+  document.getElementById('fTypeHint').hidden = !bloque;
+  if(bloque && sel.value==='Prospection') sel.value = 'Suivi';
+  if(!bloque && document.getElementById('fClientSelect').value==='__nouveau__' && sel.dataset.touched!=='1') sel.value='Prospection';
+}
+document.addEventListener('change', e=>{ if(e.target && e.target.id==='fType') e.target.dataset.touched='1'; });
+
+function selectResultat(el){
+  document.querySelectorAll('#fResultatGroup .chip').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  const r = el.dataset.val;
+  const wrap = document.getElementById('montantWrap');
+  if(r==='Devis établi' || r==='Prise de commande'){
+    wrap.hidden = false;
+    document.getElementById('montantLabel').innerHTML = (r==='Devis établi' ? 'Montant du devis (€ HT)' : 'Montant de la commande (€ HT)') + ' <span class="req">*</span>';
+  } else { wrap.hidden = true; document.getElementById('fMontant').value=''; }
+  document.getElementById('relanceLabel').innerHTML = r==='À relancer' ? 'Relance prévue le <span class="req">*</span>' : 'Relance prévue le (optionnel)';
+}
+function addToPortfolio(clientName){
+  if(inPortfolio(clientName)) return;
+  savePortfolio(PORTFOLIO.concat([{client:clientName}]));
 }
 function addVisite(){
-  const commercial = document.getElementById('fCommercial').value;
   const selectVal = document.getElementById('fClientSelect').value;
-  const manualVal = document.getElementById('fClientManual').value.trim();
-  const client = selectVal === '__nouveau__' ? manualVal : selectVal;
+  const client = currentClient();
   const date = document.getElementById('fDate').value;
   const type = document.getElementById('fType').value;
   const compteRendu = document.getElementById('fCompteRendu').value.trim();
@@ -528,60 +741,204 @@ function addVisite(){
   const contactPrenom = document.getElementById('fContactPrenom').value.trim();
   const contactTel = document.getElementById('fContactTel').value.trim();
   const contactEmail = document.getElementById('fContactEmail').value.trim();
+  const montantRaw = document.getElementById('fMontant').value.replace(',','.');
+  const montant = parseFloat(montantRaw);
 
   if(!client){ alert('Merci d\'indiquer le client / l\'agence visitée.'); return; }
   if(!date){ alert('Merci d\'indiquer la date de la visite.'); return; }
+  if(type==='Prospection' && inPortfolio(client)){ alert('Ce client est déjà dans ton portefeuille : choisis un autre type que « Prospection ».'); return; }
+  if(!contactNom || !contactPrenom){ alert('Le nom et le prénom du contact sont obligatoires.'); return; }
   if(!resultat){ alert('Merci de sélectionner un résultat.'); return; }
+  if((resultat==='Devis établi' || resultat==='Prise de commande') && !(montant > 0)){
+    alert(resultat==='Devis établi' ? 'Le montant du devis est obligatoire.' : 'Le montant de la commande est obligatoire.'); return;
+  }
+  if(resultat==='À relancer' && !relanceDate){ alert('Indique la date de relance prévue.'); return; }
+  if(relanceDate && relanceDate < date){ alert('La date de relance ne peut pas être avant la date de la visite.'); return; }
 
+  const now = new Date().toISOString();
   const visite = {
-    id: uid(), commercial, client, date, type, compteRendu, resultat,
-    relance: resultat === 'À relancer', relanceDate: resultat === 'À relancer' ? relanceDate : null,
+    id: uid(), uid: ME.uid, commercial: ME.nom, client, clientKey: normKey(client), date, type, compteRendu, resultat,
+    relance: !!relanceDate || resultat==='À relancer', relanceDate: relanceDate, relanceFaite: false,
     contactNom, contactPrenom, contactTel, contactEmail,
-    createdAt: new Date().toISOString()
+    montantDevis: resultat==='Devis établi' ? Math.round(montant*100)/100 : 0,
+    montantCommande: resultat==='Prise de commande' ? Math.round(montant*100)/100 : 0,
+    nouveauClient: selectVal==='__nouveau__' && !inPortfolio(client),
+    createdAt: now, updatedAt: now
   };
-  const list = loadTerrain();
-  list.push(visite);
-  saveTerrain(list);
+  fbDb.collection('visites').doc(visite.id).set(visite).catch(e=>toast('Erreur d\'envoi : '+e.message));
+  if(RELANCE_SOURCE){ closeRelance(RELANCE_SOURCE, true); RELANCE_SOURCE = null; }
+  if(selectVal === '__nouveau__') addToPortfolio(client);
+  toast(navigator.onLine ? 'Visite enregistrée ✓' : 'Visite enregistrée — envoi au retour du réseau');
 
-  // si nouveau client saisi manuellement, on l'ajoute au portefeuille du commercial
-  if(selectVal === '__nouveau__'){ addToPortfolio(commercial, client); }
-
-  // reset form
+  // reset formulaire
+  ['fClientManual','fContactNom','fContactPrenom','fContactTel','fContactEmail','fCompteRendu','fRelanceDate','fMontant'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fClientSelect').value = '';
-  document.getElementById('fClientManual').value = '';
-  document.getElementById('fContactNom').value = '';
-  document.getElementById('fContactPrenom').value = '';
-  document.getElementById('fContactTel').value = '';
-  document.getElementById('fContactEmail').value = '';
   document.getElementById('fClientManualWrap').hidden = true;
-  document.getElementById('fCompteRendu').value = '';
-  document.getElementById('fRelanceDate').value = '';
+  document.getElementById('fClientManualHint').textContent = '';
   document.querySelectorAll('#fResultatGroup .chip').forEach(c=>c.classList.remove('selected'));
-  document.getElementById('relanceDateWrap').hidden = true;
+  document.getElementById('montantWrap').hidden = true;
+  document.getElementById('relanceLabel').textContent = 'Relance prévue le (optionnel)';
   document.getElementById('fDate').value = todayISO();
-  refreshClientSelect();
+  const ft = document.getElementById('fType'); ft.value='Suivi'; ft.dataset.touched='';
+  renderRelanceSource();
+  updateTypeRule();
+  document.getElementById('clientHistory').innerHTML='';
   terrainTab('mesvisites');
 }
+
+/* ---------- Historique en un coup d'œil ---------- */
+let HIST_ALL = false;
+function visitesDuClient(name){
+  const k = normKey(name);
+  return VISITES.filter(v=>(v.clientKey||normKey(v.client))===k)
+    .sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||'').localeCompare(a.createdAt||''));
+}
+function renderClientHistory(prefill){
+  const el = document.getElementById('clientHistory');
+  const name = currentClient();
+  if(!name){ el.innerHTML=''; HIST_ALL=false; return; }
+  const vs = visitesDuClient(name);
+  if(!vs.length){
+    el.innerHTML = `<div class="hist-box"><div class="hb-title">Historique</div><div class="hb-stats" style="margin-top:4px;">Aucune visite enregistrée pour ce client : ce sera la première.</div></div>`;
+    return;
+  }
+  const last = vs[0];
+  const j = daysSince(last.date);
+  const rel = vs.find(v=>v.relance && !v.relanceFaite);
+  const shown = HIST_ALL ? vs : vs.slice(0,3);
+  el.innerHTML = `<div class="hist-box">
+    <div class="hb-head"><span class="hb-title">Historique · ${vs.length} visite${vs.length>1?'s':''}</span>
+      <span class="hb-stats">dernière il y a ${j<=0?'aujourd\'hui':j+' j'}</span></div>
+    ${rel ? `<div class="hb-stats" style="color:var(--warn);margin-bottom:6px;">⏰ Relance ouverte${rel.relanceDate?' pour le '+formatDateFR(rel.relanceDate):''}</div>`:''}
+    ${shown.map(v=>`<div class="hist-item">
+      <div class="hi-top"><span class="hi-date">${formatDateFR(v.date)}</span>
+        <span class="pill">${escapeHtml(v.type)}</span>
+        <span class="pill ${pillClass(v.resultat)}">${escapeHtml(v.resultat)}</span>
+        ${montantPill(v)}</div>
+      ${(v.contactPrenom||v.contactNom)?`<div class="hi-cr">👤 ${escapeHtml((v.contactPrenom||'')+' '+(v.contactNom||''))}${v.contactTel?' · '+escapeHtml(v.contactTel):''}</div>`:''}
+      ${v.compteRendu?`<div class="hi-cr">${escapeHtml(v.compteRendu.length>180?v.compteRendu.slice(0,180)+'…':v.compteRendu)}</div>`:''}
+    </div>`).join('')}
+    ${vs.length>3?`<button class="link-btn" onclick="HIST_ALL=!HIST_ALL;renderClientHistory()">${HIST_ALL?'Réduire':'Voir les '+vs.length+' visites'}</button>`:''}
+  </div>`;
+  /* Au choix du client : pré-remplit le contact avec celui de la dernière visite, si vide. */
+  const n = document.getElementById('fContactNom'), p = document.getElementById('fContactPrenom');
+  if(prefill && !n.value && !p.value && last.contactNom){
+    n.value = last.contactNom||''; p.value = last.contactPrenom||'';
+    if(!document.getElementById('fContactTel').value) document.getElementById('fContactTel').value = last.contactTel||'';
+    if(!document.getElementById('fContactEmail').value) document.getElementById('fContactEmail').value = last.contactEmail||'';
+  }
+}
+function montantPill(v){
+  if(+v.montantCommande>0) return `<span class="pill ok">Cde ${eur(v.montantCommande)}</span>`;
+  if(+v.montantDevis>0) return `<span class="pill info">Devis ${eur(v.montantDevis)}</span>`;
+  return '';
+}
+
+/* ---------- À faire ---------- */
+function relancesOuvertes(){
+  return VISITES.filter(v=>v.relance && !v.relanceFaite)
+    .sort((a,b)=>(a.relanceDate||'9999').localeCompare(b.relanceDate||'9999'));
+}
+function aRevoir(){
+  const res = [], jamais = [];
+  portfolioNames().forEach(name=>{
+    const vs = visitesDuClient(name);
+    if(!vs.length){ jamais.push(name); return; }
+    const d = daysSince(vs[0].date);
+    if(d >= 30) res.push({client:name, last:vs[0], days:d});
+  });
+  res.sort((a,b)=>b.days-a.days);
+  return {res, jamais};
+}
+function renderTodoBadge(){
+  const t = todayISO();
+  const n = relancesOuvertes().filter(v=>v.relanceDate && v.relanceDate<=t).length;
+  const b = document.getElementById('todoBadge');
+  b.hidden = !n; b.textContent = n;
+}
+function renderAFaire(){
+  const t = todayISO();
+  const rel = relancesOuvertes();
+  const groups = [
+    {k:'late', label:'En retard', list: rel.filter(v=>v.relanceDate && v.relanceDate < t)},
+    {k:'today', label:'Aujourd\'hui', list: rel.filter(v=>v.relanceDate === t)},
+    {k:'', label:'À venir', list: rel.filter(v=>v.relanceDate && v.relanceDate > t)},
+    {k:'', label:'Sans date', list: rel.filter(v=>!v.relanceDate)}
+  ].filter(g=>g.list.length);
+  document.getElementById('todoRelances').innerHTML = groups.length ? groups.map(g=>`
+    <div class="todo-group">${g.label} (${g.list.length})</div>
+    ${g.list.map(v=>{
+      const d = v.relanceDate ? daysSince(v.relanceDate) : null;
+      const tag = d===null ? '' : d>0 ? `<span class="pill bad">retard ${d} j</span>` : d===0 ? `<span class="pill warn">aujourd'hui</span>` : `<span class="pill">dans ${-d} j</span>`;
+      return `<div class="todo-card ${g.k}">
+        <div class="tc-top"><span class="tc-client">${escapeHtml(v.client)}</span>${tag}</div>
+        <div class="tc-sub">${v.relanceDate?'Relance prévue le '+formatDateFR(v.relanceDate)+' · ':''}visite du ${formatDateFR(v.date)} · ${escapeHtml(v.resultat)} ${montantPill(v)}</div>
+        ${(v.contactPrenom||v.contactNom)?`<div class="tc-sub">👤 ${escapeHtml((v.contactPrenom||'')+' '+(v.contactNom||''))}${v.contactTel?' · <a style="color:var(--amber)" href="tel:'+escapeHtml(v.contactTel)+'">'+escapeHtml(v.contactTel)+'</a>':''}</div>`:''}
+        ${v.compteRendu?`<div class="tc-sub">${escapeHtml(v.compteRendu.length>140?v.compteRendu.slice(0,140)+'…':v.compteRendu)}</div>`:''}
+        <div class="todo-actions">
+          <button class="btn-mini ok" onclick="closeRelance('${v.id}')">✓ Relance faite</button>
+          <button class="btn-mini amber" onclick="nouvelleVisitePour(decodeURIComponent('${jsArg(v.client)}'),'${v.id}')">Nouvelle visite</button>
+        </div>
+      </div>`;}).join('')}
+  `).join('') : '<div class="empty">Aucune relance en attente. 👌</div>';
+
+  const {res, jamais} = aRevoir();
+  document.getElementById('todoARevoir').innerHTML = res.length ? res.map(c=>`
+    <div class="todo-card ${c.days>=60?'late':''}">
+      <div class="tc-top"><span class="tc-client">${escapeHtml(c.client)}</span><span class="pill ${c.days>=60?'bad':'warn'}">${c.days} j</span></div>
+      <div class="tc-sub">Dernière visite le ${formatDateFR(c.last.date)} · ${escapeHtml(c.last.resultat)}</div>
+      <div class="todo-actions"><button class="btn-mini amber" onclick="nouvelleVisitePour(decodeURIComponent('${jsArg(c.client)}'))">Saisir une visite</button></div>
+    </div>`).join('') : `<div class="empty">${PORTFOLIO.length?'Tous les clients visités ont été revus il y a moins de 30 jours.':'Ton portefeuille est vide.'}</div>`;
+
+  document.getElementById('todoJamais').innerHTML = jamais.length ? jamais.map(n=>`
+    <div class="todo-card">
+      <div class="tc-top"><span class="tc-client">${escapeHtml(n)}</span><span class="pill bad">jamais visité</span></div>
+      <div class="todo-actions"><button class="btn-mini amber" onclick="nouvelleVisitePour(decodeURIComponent('${jsArg(n)}'))">Saisir une visite</button></div>
+    </div>`).join('') : `<div class="empty">${PORTFOLIO.length?'Tous les clients du portefeuille ont déjà été visités.':'Ton portefeuille est vide.'}</div>`;
+}
+function closeRelance(id, silent){
+  fbDb.collection('visites').doc(id).update({relanceFaite:true, relanceFaiteLe:todayISO(), updatedAt:new Date().toISOString()})
+    .catch(e=>toast('Erreur : '+e.message));
+  if(!silent) toast('Relance marquée comme faite');
+}
+function nouvelleVisitePour(client, relanceId){
+  terrainTab('saisie');
+  const sel = document.getElementById('fClientSelect');
+  if([...sel.options].some(o=>o.value===client)){ sel.value = client; document.getElementById('fClientManualWrap').hidden = true; }
+  else { sel.value='__nouveau__'; document.getElementById('fClientManualWrap').hidden=false; document.getElementById('fClientManual').value = client; }
+  ['fContactNom','fContactPrenom','fContactTel','fContactEmail'].forEach(id=>document.getElementById(id).value='');
+  HIST_ALL=false; updateTypeRule(); renderClientHistory(true);
+  RELANCE_SOURCE = relanceId || null; renderRelanceSource();
+}
+function renderRelanceSource(){
+  const el = document.getElementById('relanceSourceInfo');
+  el.hidden = !RELANCE_SOURCE;
+  el.innerHTML = RELANCE_SOURCE ? '✓ La relance d\'origine sera marquée comme faite à l\'enregistrement.' : '';
+}
+
+/* ---------- Mes visites ---------- */
 function renderMesVisites(){
-  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
-  const list = loadTerrain().filter(v=>v.commercial===actif).sort((a,b)=> b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+  const list = VISITES.slice().sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||'').localeCompare(a.createdAt||''));
   const el = document.getElementById('mesVisitesList');
   if(!list.length){ el.innerHTML = '<div class="empty">Aucune visite enregistrée pour l\'instant.</div>'; return; }
   el.innerHTML = list.map(visitCardHtml).join('');
 }
 function pillClass(resultat){
-  if(resultat==='Vente'||resultat==='Ouverture de compte remplie') return 'ok';
+  if(resultat==='Vente'||resultat==='Ouverture de compte remplie'||resultat==='Prise de commande') return 'ok';
   if(resultat==='Devis établi') return 'info';
   if(resultat==='À relancer') return 'warn';
   if(resultat==='Sans suite') return 'bad';
   return '';
 }
 function isConversion(resultat){
-  return resultat === 'Vente' || resultat === 'Ouverture de compte remplie';
+  return resultat === 'Vente' || resultat === 'Ouverture de compte remplie' || resultat === 'Prise de commande';
 }
+const RESULTATS_LISTE = ['Vente','Prise de commande','Ouverture de compte remplie','Devis établi','Suivi simple','À relancer','Sans suite'];
 function visitCardHtml(v){
   const contact = (v.contactNom || v.contactPrenom) ? `${v.contactPrenom||''} ${v.contactNom||''}`.trim() : '';
   const contactLine = (contact || v.contactTel || v.contactEmail) ? `<div class="vc-cr" style="color:var(--text-lo);font-size:12px;">👤 ${escapeHtml(contact)}${v.contactTel?' · '+escapeHtml(v.contactTel):''}${v.contactEmail?' · '+escapeHtml(v.contactEmail):''}</div>` : '';
+  const relPill = v.relance && v.relanceFaite ? `<span class="pill ok">Relance faite</span>`
+    : v.relance ? `<span class="pill warn">Relance ${v.relanceDate?formatDateFR(v.relanceDate):'à dater'}</span>` : '';
   return `<div class="visit-card">
     <div class="vc-top">
       <span class="vc-client">${escapeHtml(v.client)}</span>
@@ -591,29 +948,32 @@ function visitCardHtml(v){
       <span class="pill">${escapeHtml(v.commercial)}</span>
       <span class="pill">${escapeHtml(v.type)}</span>
       <span class="pill ${pillClass(v.resultat)}">${escapeHtml(v.resultat)}</span>
-      ${v.relance && v.relanceDate ? `<span class="pill warn">Relance ${formatDateFR(v.relanceDate)}</span>` : ''}
+      ${montantPill(v)}
+      ${relPill}
     </div>
     ${v.compteRendu ? `<div class="vc-cr">${escapeHtml(v.compteRendu)}</div>` : ''}
     ${contactLine}
   </div>`;
 }
 function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function formatDateFR(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+function formatDateFR(iso){ if(!iso) return ''; const [y,m,d]=String(iso).slice(0,10).split('-'); return `${d}/${m}/${y}`; }
 
-/* ===================== TERRAIN: EXPORT ===================== */
+/* ---------- Sauvegarde ---------- */
 function exportTerrain(fmt){
-  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
-  const list = loadTerrain().filter(v=>v.commercial===actif);
-  if(!list.length){ alert('Aucune visite à exporter pour '+actif+'.'); return; }
+  const list = VISITES;
+  if(!list.length){ alert('Aucune visite à exporter.'); return; }
   const dateTag = todayISO();
   if(fmt==='json'){
-    downloadBlob(JSON.stringify(list, null, 2), `visites_${actif}_${dateTag}.json`, 'application/json');
+    downloadBlob(JSON.stringify(list, null, 2), `visites_${ME.nom}_${dateTag}.json`, 'application/json');
   } else {
     const csv = Papa.unparse(list.map(v=>({
-      id:v.id, commercial:v.commercial, client:v.client, date:v.date, type:v.type,
-      resultat:v.resultat, relance:v.relance, relanceDate:v.relanceDate||'', compteRendu:v.compteRendu, createdAt:v.createdAt
+      id:v.id, commercial:v.commercial, client:v.client, date:v.date, type:v.type, resultat:v.resultat,
+      montantDevis:v.montantDevis||'', montantCommande:v.montantCommande||'',
+      relance:v.relance, relanceDate:v.relanceDate||'', relanceFaite:!!v.relanceFaite,
+      contactNom:v.contactNom||'', contactPrenom:v.contactPrenom||'', contactTel:v.contactTel||'', contactEmail:v.contactEmail||'',
+      compteRendu:v.compteRendu, createdAt:v.createdAt
     })));
-    downloadBlob(csv, `visites_${actif}_${dateTag}.csv`, 'text/csv');
+    downloadBlob(csv, `visites_${ME.nom}_${dateTag}.csv`, 'text/csv');
   }
 }
 function downloadBlob(content, filename, mime){
@@ -624,24 +984,14 @@ function downloadBlob(content, filename, mime){
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-function clearTerrain(){
-  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
-  if(!confirm(`Effacer toutes les visites de ${actif} sur cet appareil ? Cette action est irréversible.`)) return;
-  const list = loadTerrain().filter(v=>v.commercial!==actif);
-  saveTerrain(list);
-  renderMesVisites();
-}
 
-/* ===================== PORTEFEUILLE (TERRAIN) ===================== */
+/* ---------- Portefeuille ---------- */
 function handlePortfolioImport(fileList){
   const files = Array.from(fileList);
   if(!files.length) return;
-  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
-  const portfolio = loadPortfolio();
-  let added=0, skipped=0, errors=0, pending=files.length;
+  let incoming = [], errors=0, pending=files.length;
   const logEl = document.getElementById('portfolioImportLog');
   logEl.innerHTML = 'Import en cours...';
-
   files.forEach(file=>{
     const reader = new FileReader();
     reader.onload = function(e){
@@ -651,71 +1001,90 @@ function handlePortfolioImport(fileList){
           const parsed = JSON.parse(e.target.result);
           rows = Array.isArray(parsed) ? parsed : [];
         } else {
-          const parsed = Papa.parse(e.target.result, {header:true, skipEmptyLines:true});
-          rows = parsed.data;
+          rows = Papa.parse(e.target.result, {header:true, skipEmptyLines:true}).data;
         }
         rows.forEach(r=>{
           if(!r) return;
-          // recherche flexible du nom de colonne
+          if(typeof r === 'string'){ incoming.push({client:r.trim()}); return; }
           const keys = Object.keys(r);
           const clientKey = keys.find(k=>['client','nom','nom_client','agence','societe','société'].includes(k.toLowerCase().trim()));
           const clientName = clientKey ? (r[clientKey]||'').toString().trim() : '';
           if(!clientName) return;
-          // colonne commercial optionnelle pour répartir l'import
           const commKey = keys.find(k=>k.toLowerCase().trim()==='commercial');
-          const targetCommercial = commKey && r[commKey] ? r[commKey].toString().trim() : actif;
-          if(!portfolio[targetCommercial]) portfolio[targetCommercial] = [];
-          const exists = portfolio[targetCommercial].some(c=>c.client.toLowerCase() === clientName.toLowerCase());
-          if(exists){ skipped++; } else { portfolio[targetCommercial].push({client: clientName}); added++; }
+          if(commKey && r[commKey] && normKey(r[commKey]) !== normKey(ME.nom)) return; // ligne d'un autre commercial
+          incoming.push({client:clientName});
         });
       }catch(err){ errors++; }
       pending--;
-      if(pending===0){
-        savePortfolio(portfolio);
-        logEl.innerHTML = `Import terminé : <b>${added} client(s) ajouté(s)</b>, ${skipped} déjà présent(s)${errors?`, ${errors} fichier(s) en erreur`:''}.`;
-        refreshClientSelect();
-        renderPortfolioList();
-      }
+      if(pending===0) finish();
     };
-    reader.onerror = function(){ errors++; pending--; };
+    reader.onerror = function(){ errors++; pending--; if(pending===0) finish(); };
     reader.readAsText(file);
   });
+  function finish(){
+    const before = PORTFOLIO.length;
+    const merged = mergeClients(PORTFOLIO, incoming);
+    const added = merged.length - before;
+    savePortfolio(merged);
+    logEl.innerHTML = `Import terminé : <b>${added} client(s) ajouté(s)</b>, ${incoming.length-added} déjà présent(s)${errors?`, ${errors} fichier(s) en erreur`:''}.`;
+    refreshClientSelect(true); renderPortfolioList();
+  }
 }
 function renderPortfolioList(){
-  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
-  const portfolio = loadPortfolio();
-  const list = (portfolio[actif]||[]).slice().sort((a,b)=>a.client.localeCompare(b.client));
+  const list = PORTFOLIO.slice().sort((a,b)=>a.client.localeCompare(b.client));
   const el = document.getElementById('portfolioList');
-  if(!list.length){ el.innerHTML = '<div class="empty">Aucun client dans le portefeuille de '+escapeHtml(actif)+' pour l\'instant.</div>'; return; }
-  el.innerHTML = `<p style="color:var(--text-lo);font-size:12.5px;margin-bottom:10px;">${list.length} client(s) pour ${escapeHtml(actif)}</p>` +
-    list.map(c=>`<div class="visit-card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;">
-      <span class="vc-client" style="font-size:14px;">${escapeHtml(c.client)}</span>
-      <button class="exit" onclick="removeFromPortfolio('${escapeHtml(c.client).replace(/'/g,"\\'")}')">Retirer</button>
-    </div>`).join('');
+  if(!list.length){ el.innerHTML = '<div class="empty">Aucun client dans ton portefeuille pour l\'instant.</div>'; return; }
+  el.innerHTML = `<p style="color:var(--text-lo);font-size:12.5px;margin-bottom:10px;">${list.length} client(s)</p>` +
+    list.map(c=>{
+      const vs = visitesDuClient(c.client);
+      const info = vs.length ? `${vs.length} visite${vs.length>1?'s':''} · dernière le ${formatDateFR(vs[0].date)}` : 'jamais visité';
+      return `<div class="visit-card" style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;">
+      <div><div class="vc-client" style="font-size:14px;">${escapeHtml(c.client)}</div><div style="font-size:11.5px;color:var(--text-lo);margin-top:2px;">${info}</div></div>
+      <button class="exit" onclick="removeFromPortfolio(decodeURIComponent('${jsArg(c.client)}'))">Retirer</button>
+    </div>`;}).join('');
 }
 function removeFromPortfolio(clientName){
-  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
-  const portfolio = loadPortfolio();
-  portfolio[actif] = (portfolio[actif]||[]).filter(c=>c.client !== clientName);
-  savePortfolio(portfolio);
-  refreshClientSelect();
-  renderPortfolioList();
+  if(!confirm(`Retirer « ${clientName} » de ton portefeuille ?`)) return;
+  savePortfolio(PORTFOLIO.filter(c=>c.client !== clientName));
+  refreshClientSelect(true); renderPortfolioList();
 }
-function clearPortfolio(){
-  const actif = localStorage.getItem(LS_COMMERCIAL_ACTIF) || 'Clément';
-  if(!confirm(`Vider tout le portefeuille de ${actif} ?`)) return;
-  const portfolio = loadPortfolio();
-  portfolio[actif] = [];
-  savePortfolio(portfolio);
-  refreshClientSelect();
-  renderPortfolioList();
-}
+</script>
 
+<script>
+/* ===================== ESPACE CONTRÔLE (responsable) ===================== */
+function loadControlLocal(){ try{ return JSON.parse(localStorage.getItem(LS_CONTROL)) || {}; }catch(e){ return {}; } }
+function saveControlLocal(store){ try{ localStorage.setItem(LS_CONTROL, JSON.stringify(store)); }catch(e){ alert('Stockage saturé.'); } }
+/* Visites en ligne + anciens fichiers importés (les visites en ligne priment). */
+function loadControl(){ return Object.assign({}, loadControlLocal(), CONTROL_LIVE); }
+
+let CURRENT_CP = 'dashboard';
+function startControl(){
+  const fr = document.getElementById('filtResultat');
+  fr.innerHTML = '<option value="">Tous les résultats</option>' + RESULTATS_LISTE.map(r=>`<option value="${r}">${r}</option>`).join('');
+  controlTab('dashboard');
+  const u = fbDb.collection('visites').onSnapshot({includeMetadataChanges:true}, snap=>{
+    const m = {}; snap.docs.forEach(d=>{ const v=d.data(); if(v && v.id) m[v.id]=v; });
+    CONTROL_LIVE = m;
+    SYNC.pending = snap.metadata.hasPendingWrites; SYNC.error=''; renderSync();
+    if(!snap.metadata.hasPendingWrites) controlTab(CURRENT_CP, true);
+  }, e=>{ SYNC.error = e.message; renderSync(); });
+  UNSUBS.push(u);
+}
+function controlTab(cp, silent){
+  CURRENT_CP = cp;
+  document.querySelectorAll('#control .tab').forEach(t=>t.classList.toggle('active', t.dataset.cp===cp));
+  ['dashboard','commerciaux','liste','clients','pdf','import'].forEach(x=>document.getElementById('cp-'+x).hidden = (x!==cp));
+  if(cp==='dashboard') renderDashboard();
+  if(cp==='commerciaux') renderCommerciauxView();
+  if(cp==='liste') renderListe();
+  if(cp==='clients') { populateClientSelect(); renderClientView(); }
+  if(!silent) window.scrollTo({top:0});
+}
 /* ===================== IMPORT (CONTROL) ===================== */
 function handleImport(fileList){
   const files = Array.from(fileList);
   if(!files.length) return;
-  const store = loadControl();
+  const store = loadControlLocal();
   let added=0, updated=0, errors=0;
   let pending = files.length;
   const logEl = document.getElementById('importLog');
@@ -746,7 +1115,7 @@ function handleImport(fileList){
       }
       pending--;
       if(pending===0){
-        saveControl(store);
+        saveControlLocal(store);
         logEl.innerHTML = `Import terminé : <b>${added} ajoutée(s)</b>, ${updated} mise(s) à jour${errors?`, ${errors} fichier(s) en erreur`:''}.`;
         renderDashboard();
         populateClientSelect();
@@ -757,8 +1126,8 @@ function handleImport(fileList){
   });
 }
 function clearControl(){
-  if(!confirm('Effacer TOUTES les visites consolidées de l\'espace contrôle ? Cette action est irréversible.')) return;
-  saveControl({});
+  if(!confirm('Effacer les anciens fichiers importés sur cet appareil ? Les visites en ligne ne sont pas touchées.')) return;
+  saveControlLocal({});
   renderDashboard();
   populateClientSelect();
   document.getElementById('importLog').innerHTML = '';
@@ -780,14 +1149,14 @@ function renderDashboard(){
 
   const now = new Date();
   const weekAgo = new Date(now); weekAgo.setDate(now.getDate()-7);
-  const cetteSemaine = all.filter(v=> new Date(v.date) >= weekAgo && new Date(v.date) <= now).length;
+  const cetteSemaine = all.filter(v=> v.date >= isoDaysAgo(7) && v.date <= todayISO()).length;
   document.getElementById('kpiSemaine').textContent = cetteSemaine;
 
   const conclu = all.filter(v=>isConversion(v.resultat)).length;
   const taux = all.length ? Math.round((conclu/all.length)*100) : 0;
   document.getElementById('kpiTransfo').textContent = taux+'%';
 
-  const relances = all.filter(v=>v.relance && v.relanceDate && new Date(v.relanceDate) >= new Date(new Date().toDateString())).length;
+  const relances = all.filter(v=>v.relance && !v.relanceFaite).length;
   document.getElementById('kpiRelances').textContent = relances;
 
   document.getElementById('kpiDormants').textContent = getDormantClients(all).length;
@@ -823,7 +1192,7 @@ function renderDashboard(){
   });
 
   // chart 2: répartition résultats
-  const resultCounts = {'Vente':0,'Ouverture de compte remplie':0,'Devis établi':0,'À relancer':0,'Sans suite':0};
+  const resultCounts = {}; RESULTATS_LISTE.forEach(r=>resultCounts[r]=0);
   all.forEach(v=>{ if(resultCounts[v.resultat]!==undefined) resultCounts[v.resultat]++; });
   const ctx2 = document.getElementById('chartResultats').getContext('2d');
   if(chartResultatsInstance) chartResultatsInstance.destroy();
@@ -831,7 +1200,7 @@ function renderDashboard(){
     type:'doughnut',
     data:{
       labels: Object.keys(resultCounts),
-      datasets:[{data:Object.values(resultCounts), backgroundColor:['#4caf7d','#3f9d6b','#4c8ec9','#e0a83c','#d9634c']}]
+      datasets:[{data:Object.values(resultCounts), backgroundColor:['#4caf7d','#6cc497','#3f9d6b','#4c8ec9','#9aa2b8','#e0a83c','#d9634c']}]
     },
     options:{ responsive:true, plugins:{legend:{position:'bottom', labels:{color:'#f2ede0'}}} }
   });
@@ -846,17 +1215,20 @@ function computeCommercialStats(commercial){
   const now = new Date();
   const weekAgo = new Date(now); weekAgo.setDate(now.getDate()-7);
   const monthAgo = new Date(now); monthAgo.setDate(now.getDate()-30);
-  const visitesSemaine = all.filter(v=> new Date(v.date) >= weekAgo && new Date(v.date) <= now).length;
-  const visitesMois = all.filter(v=> new Date(v.date) >= monthAgo && new Date(v.date) <= now).length;
+  const visitesSemaine = all.filter(v=> v.date >= isoDaysAgo(7) && v.date <= todayISO()).length;
+  const visitesMois = all.filter(v=> v.date >= isoDaysAgo(30) && v.date <= todayISO()).length;
 
   const ventes = all.filter(v=>v.resultat==='Vente').length;
+  const commandes = all.filter(v=>v.resultat==='Prise de commande').length;
   const ouvertures = all.filter(v=>v.resultat==='Ouverture de compte remplie').length;
   const devis = all.filter(v=>v.resultat==='Devis établi').length;
   const sansSuite = all.filter(v=>v.resultat==='Sans suite').length;
-  const conclu = ventes + ouvertures;
+  const totalDevis = all.reduce((s,v)=>s+(+v.montantDevis||0),0);
+  const totalCommandes = all.reduce((s,v)=>s+(+v.montantCommande||0),0);
+  const conclu = ventes + ouvertures + commandes;
   const taux = nb ? Math.round((conclu/nb)*100) : 0;
 
-  const relancesEnAttente = all.filter(v=>v.relance && v.relanceDate && new Date(v.relanceDate) >= new Date(new Date().toDateString())).length;
+  const relancesEnAttente = all.filter(v=>v.relance && !v.relanceFaite).length;
 
   const clientsDistincts = new Set(all.map(v=>v.client)).size;
   const clientsDormants = getDormantClients(all).length;
@@ -869,7 +1241,7 @@ function computeCommercialStats(commercial){
     moyenneSemaine = Math.round((nb / semainesEcoulees) * 10) / 10;
   }
 
-  return { commercial, nb, visitesSemaine, visitesMois, ventes, ouvertures, devis, sansSuite, relancesEnAttente, taux, clientsDistincts, clientsDormants, moyenneSemaine };
+  return { commercial, nb, visitesSemaine, visitesMois, ventes, commandes, totalDevis, totalCommandes, ouvertures, devis, sansSuite, relancesEnAttente, taux, clientsDistincts, clientsDormants, moyenneSemaine };
 }
 function commCardHtml(s){
   return `<div class="comm-card">
@@ -881,10 +1253,11 @@ function commCardHtml(s){
     <div class="comm-row"><span class="k">Visites ce mois</span><span class="v">${s.visitesMois}</span></div>
     <div class="comm-row"><span class="k">Moyenne / semaine</span><span class="v">${s.moyenneSemaine}</span></div>
     <div class="comm-row"><span class="k">Ventes</span><span class="v">${s.ventes}</span></div>
+    <div class="comm-row"><span class="k">Prises de commande</span><span class="v">${s.commandes} · ${eur(s.totalCommandes)}</span></div>
     <div class="comm-row"><span class="k">Ouvertures de compte</span><span class="v">${s.ouvertures}</span></div>
-    <div class="comm-row"><span class="k">Devis établis</span><span class="v">${s.devis}</span></div>
+    <div class="comm-row"><span class="k">Devis établis</span><span class="v">${s.devis} · ${eur(s.totalDevis)}</span></div>
     <div class="comm-row"><span class="k">Sans suite</span><span class="v">${s.sansSuite}</span></div>
-    <div class="comm-row"><span class="k">Relances en attente</span><span class="v">${s.relancesEnAttente}</span></div>
+    <div class="comm-row"><span class="k">Relances ouvertes</span><span class="v">${s.relancesEnAttente}</span></div>
     <div class="comm-row"><span class="k">Clients suivis</span><span class="v">${s.clientsDistincts}</span></div>
     <div class="comm-row"><span class="k">Clients dormants (&gt;2 mois)</span><span class="v ${s.clientsDormants?'bad':''}">${s.clientsDormants}</span></div>
   </div>`;
@@ -907,10 +1280,10 @@ function renderCommerciauxView(){
   chartCommerciauxCompareInstance = new Chart(ctx, {
     type:'bar',
     data:{
-      labels:['Visites', 'Ventes', 'Ouvertures', 'Devis établis', 'Relances en attente'],
+      labels:['Visites', 'Ventes', 'Commandes', 'Ouvertures', 'Devis établis', 'Relances ouvertes'],
       datasets:[
-        {label:'Clément', data:[sC.nb, sC.ventes, sC.ouvertures, sC.devis, sC.relancesEnAttente], backgroundColor:'#c9a84c'},
-        {label:'Lorris', data:[sL.nb, sL.ventes, sL.ouvertures, sL.devis, sL.relancesEnAttente], backgroundColor:'#4caf7d'}
+        {label:'Clément', data:[sC.nb, sC.ventes, sC.commandes, sC.ouvertures, sC.devis, sC.relancesEnAttente], backgroundColor:'#c9a84c'},
+        {label:'Lorris', data:[sL.nb, sL.ventes, sL.commandes, sL.ouvertures, sL.devis, sL.relancesEnAttente], backgroundColor:'#4caf7d'}
       ]
     },
     options:{
@@ -933,7 +1306,7 @@ function renderListe(){
   let list = all;
   if(fc) list = list.filter(v=>v.commercial===fc);
   if(fr) list = list.filter(v=>v.resultat===fr);
-  if(frel==='enattente') list = list.filter(v=>v.relance && v.relanceDate && new Date(v.relanceDate) >= new Date(new Date().toDateString()));
+  if(frel==='enattente') list = list.filter(v=>v.relance && !v.relanceFaite);
   list = list.sort((a,b)=> b.date.localeCompare(a.date));
   const el = document.getElementById('listeVisites');
   if(!list.length){ el.innerHTML = '<div class="empty">Aucune visite ne correspond à ces filtres.</div>'; return; }
@@ -1000,13 +1373,16 @@ function renderClientView(){
   const sel = document.getElementById('clientSelect');
   const client = sel.value;
   const body = document.getElementById('clientViewBody');
-  if(!client){ body.innerHTML = '<div class="empty">Aucun client dans l\'espace contrôle pour l\'instant. Importe des visites.</div>'; return; }
+  if(!client){ body.innerHTML = '<div class="empty">Aucune visite pour l\'instant.</div>'; return; }
   const visites = all.filter(v=>v.client===client).sort((a,b)=> b.date.localeCompare(a.date));
   const nb = visites.length;
   const dernier = visites[0];
   const conclu = visites.filter(v=>isConversion(v.resultat)).length;
   const devis = visites.filter(v=>v.resultat==='Devis établi').length;
-  const relanceEnAttente = visites.find(v=>v.relance && v.relanceDate && new Date(v.relanceDate) >= new Date(new Date().toDateString()));
+  const totDevis = visites.reduce((s,v)=>s+(+v.montantDevis||0),0);
+  const nbCdes = visites.filter(v=>v.resultat==='Prise de commande').length;
+  const totCdes = visites.reduce((s,v)=>s+(+v.montantCommande||0),0);
+  const relanceEnAttente = visites.find(v=>v.relance && !v.relanceFaite);
   const commerciaux = Array.from(new Set(visites.map(v=>v.commercial)));
   const joursDepuis = dernier ? daysSince(dernier.date) : null;
   const alerteHtml = (joursDepuis !== null && joursDepuis >= DORMANT_DAYS)
@@ -1024,9 +1400,10 @@ function renderClientView(){
       <div class="cs-row"><span class="k">Commercial(aux) suivi(s)</span><span class="v">${escapeHtml(commerciaux.join(', '))}</span></div>
       <div class="cs-row"><span class="k">Dernière visite</span><span class="v">${dernier ? formatDateFR(dernier.date) : '—'}</span></div>
       <div class="cs-row"><span class="k">Dernier résultat</span><span class="v">${dernier ? escapeHtml(dernier.resultat) : '—'}</span></div>
-      <div class="cs-row"><span class="k">Ventes / ouvertures de compte</span><span class="v">${conclu}</span></div>
-      <div class="cs-row"><span class="k">Devis établis</span><span class="v">${devis}</span></div>
-      <div class="cs-row"><span class="k">Relance en attente</span><span class="v">${relanceEnAttente ? formatDateFR(relanceEnAttente.relanceDate) : 'Aucune'}</span></div>
+      <div class="cs-row"><span class="k">Ventes / commandes / ouvertures</span><span class="v">${conclu}</span></div>
+      <div class="cs-row"><span class="k">Devis établis</span><span class="v">${devis}${totDevis?' · '+eur(totDevis):''}</span></div>
+      <div class="cs-row"><span class="k">Commandes prises</span><span class="v">${nbCdes}${totCdes?' · '+eur(totCdes):''}</span></div>
+      <div class="cs-row"><span class="k">Relance en attente</span><span class="v">${relanceEnAttente ? (relanceEnAttente.relanceDate?formatDateFR(relanceEnAttente.relanceDate):'à dater') : 'Aucune'}</span></div>
     </div>
     <div class="section-title">Historique complet</div>
     ${visites.map(visitCardHtml).join('')}
@@ -1086,11 +1463,16 @@ function buildVisitesPDF(commercial, start, end, periodLabel, filename){
 
   const nb = visites.length;
   const ventes = visites.filter(v=>v.resultat==='Vente').length;
+  const commandes = visites.filter(v=>v.resultat==='Prise de commande').length;
   const ouvertures = visites.filter(v=>v.resultat==='Ouverture de compte remplie').length;
   const devis = visites.filter(v=>v.resultat==='Devis établi').length;
+  const suivis = visites.filter(v=>v.resultat==='Suivi simple').length;
   const relance = visites.filter(v=>v.resultat==='À relancer').length;
   const sansSuite = visites.filter(v=>v.resultat==='Sans suite').length;
-  const conclu = ventes + ouvertures;
+  const totDevis = visites.reduce((s,v)=>s+(+v.montantDevis||0),0);
+  const totCdes = visites.reduce((s,v)=>s+(+v.montantCommande||0),0);
+  const conclu = ventes + ouvertures + commandes;
+  const pdfEur = n => (Math.round((+n||0)*100)/100).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,' ') + ' EUR';
   const taux = nb ? Math.round((conclu/nb)*100) : 0;
 
   doc.autoTable({
@@ -1099,11 +1481,13 @@ function buildVisitesPDF(commercial, start, end, periodLabel, filename){
     body: [
       ['Visites réalisées', String(nb)],
       ['Ventes', String(ventes)],
+      ['Prises de commande', String(commandes) + (totCdes?' ('+pdfEur(totCdes)+')':'')],
       ['Ouvertures de compte remplies', String(ouvertures)],
-      ['Devis établis', String(devis)],
+      ['Devis établis', String(devis) + (totDevis?' ('+pdfEur(totDevis)+')':'')],
+      ['Suivi simple', String(suivis)],
       ['À relancer', String(relance)],
       ['Sans suite', String(sansSuite)],
-      ['Taux de transformation (ventes + ouvertures)', taux+'%']
+      ['Taux de transformation (ventes + commandes + ouvertures)', taux+'%']
     ],
     theme:'plain',
     headStyles:{fillColor:amber, textColor:[17,23,38], fontStyle:'bold'},
@@ -1123,12 +1507,13 @@ function buildVisitesPDF(commercial, start, end, periodLabel, filename){
   } else {
     doc.autoTable({
       startY: y+4,
-      head: [['Date','Client','Type','Résultat','Compte-rendu']],
-      body: visites.map(v=>[formatDateFR(v.date), v.client, v.type, v.resultat, v.compteRendu||'']),
+      head: [['Date','Client','Contact','Type','Résultat','Montant','Compte-rendu']],
+      body: visites.map(v=>[formatDateFR(v.date), v.client, ((v.contactPrenom||'')+' '+(v.contactNom||'')).trim(), v.type, v.resultat,
+        (+v.montantCommande?pdfEur(v.montantCommande):+v.montantDevis?pdfEur(v.montantDevis):''), v.compteRendu||'']),
       theme:'striped',
       headStyles:{fillColor:navy, textColor:255},
       styles:{fontSize:9, cellPadding:3, overflow:'linebreak'},
-      columnStyles:{4:{cellWidth:65}},
+      columnStyles:{6:{cellWidth:55}},
       margin:{left:14,right:14}
     });
   }
@@ -1155,7 +1540,6 @@ function generatePDFMonthly(){
 }
 
 /* ===================== INIT ===================== */
-document.getElementById('fDate') && (document.getElementById('fDate').value = todayISO());
 </script>
 </body>
 </html>
