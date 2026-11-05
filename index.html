@@ -269,6 +269,10 @@ select option:disabled{color:#5d6478;}
             <div class="hint-small" id="fTypeHint" hidden>Client déjà en portefeuille : la prospection n'est pas possible.</div>
           </div>
         </div>
+        <div class="field" id="fVilleWrap" hidden>
+          <label>Ville <span class="req">*</span></label>
+          <input type="text" id="fVille" placeholder="Ville du prospect" autocomplete="address-level2">
+        </div>
         <div class="field">
           <label>Compte-rendu</label>
           <textarea id="fCompteRendu" placeholder="Ce qui s'est dit, ce qui a été montré, décisions prises..."></textarea>
@@ -634,7 +638,7 @@ function migrateLocal(){
 }
 function cleanVisite(v){
   return {
-    id:v.id, client:v.client, clientKey:normKey(v.client), date:v.date, type:v.type||'', compteRendu:v.compteRendu||'',
+    id:v.id, client:v.client, clientKey:normKey(v.client), date:v.date, type:v.type||'', ville:v.ville||'', compteRendu:v.compteRendu||'',
     resultat:v.resultat||'', relance:!!(v.relance||v.relanceDate), relanceDate:v.relanceDate||null, relanceFaite:!!v.relanceFaite,
     contactNom:v.contactNom||'', contactPrenom:v.contactPrenom||'', contactTel:v.contactTel||'', contactEmail:v.contactEmail||'',
     montantDevis:+v.montantDevis||0, montantCommande:+v.montantCommande||0,
@@ -710,8 +714,11 @@ function updateTypeRule(){
   document.getElementById('fTypeHint').hidden = !bloque;
   if(bloque && sel.value==='Prospection') sel.value = 'Suivi';
   if(!bloque && document.getElementById('fClientSelect').value==='__nouveau__' && sel.dataset.touched!=='1') sel.value='Prospection';
+  updateVilleField();
 }
-document.addEventListener('change', e=>{ if(e.target && e.target.id==='fType') e.target.dataset.touched='1'; });
+document.addEventListener('change', e=>{ if(e.target && e.target.id==='fType'){ e.target.dataset.touched='1'; updateVilleField(); } });
+/* Ville obligatoire pour une visite de prospection */
+function updateVilleField(){ const w=document.getElementById('fVilleWrap'); if(w) w.hidden = document.getElementById('fType').value!=='Prospection'; }
 
 function selectResultat(el){
   document.querySelectorAll('#fResultatGroup .chip').forEach(c=>c.classList.remove('selected'));
@@ -741,11 +748,13 @@ function addVisite(){
   const contactPrenom = document.getElementById('fContactPrenom').value.trim();
   const contactTel = document.getElementById('fContactTel').value.trim();
   const contactEmail = document.getElementById('fContactEmail').value.trim();
+  const ville = document.getElementById('fVille').value.trim();
   const montantRaw = document.getElementById('fMontant').value.replace(',','.');
   const montant = parseFloat(montantRaw);
 
   if(!client){ alert('Merci d\'indiquer le client / l\'agence visitée.'); return; }
   if(!date){ alert('Merci d\'indiquer la date de la visite.'); return; }
+  if(type==='Prospection' && !ville){ alert('La ville est obligatoire pour une visite de prospection.'); document.getElementById('fVille').focus(); return; }
   if(type==='Prospection' && inPortfolio(client)){ alert('Ce client est déjà dans ton portefeuille : choisis un autre type que « Prospection ».'); return; }
   if(!contactNom || !contactPrenom){ alert('Le nom et le prénom du contact sont obligatoires.'); return; }
   if(!resultat){ alert('Merci de sélectionner un résultat.'); return; }
@@ -760,6 +769,7 @@ function addVisite(){
     id: uid(), uid: ME.uid, commercial: ME.nom, client, clientKey: normKey(client), date, type, compteRendu, resultat,
     relance: !!relanceDate || resultat==='À relancer', relanceDate: relanceDate, relanceFaite: false,
     contactNom, contactPrenom, contactTel, contactEmail,
+    ville: type==='Prospection' ? ville : '',
     montantDevis: resultat==='Devis établi' ? Math.round(montant*100)/100 : 0,
     montantCommande: resultat==='Prise de commande' ? Math.round(montant*100)/100 : 0,
     nouveauClient: selectVal==='__nouveau__' && !inPortfolio(client),
@@ -771,7 +781,7 @@ function addVisite(){
   toast(navigator.onLine ? 'Visite enregistrée ✓' : 'Visite enregistrée — envoi au retour du réseau');
 
   // reset formulaire
-  ['fClientManual','fContactNom','fContactPrenom','fContactTel','fContactEmail','fCompteRendu','fRelanceDate','fMontant'].forEach(id=>document.getElementById(id).value='');
+  ['fClientManual','fContactNom','fContactPrenom','fContactTel','fContactEmail','fCompteRendu','fRelanceDate','fMontant','fVille'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fClientSelect').value = '';
   document.getElementById('fClientManualWrap').hidden = true;
   document.getElementById('fClientManualHint').textContent = '';
@@ -779,7 +789,7 @@ function addVisite(){
   document.getElementById('montantWrap').hidden = true;
   document.getElementById('relanceLabel').textContent = 'Relance prévue le (optionnel)';
   document.getElementById('fDate').value = todayISO();
-  const ft = document.getElementById('fType'); ft.value='Suivi'; ft.dataset.touched='';
+  const ft = document.getElementById('fType'); ft.value='Suivi'; ft.dataset.touched=''; updateVilleField();
   renderRelanceSource();
   updateTypeRule();
   document.getElementById('clientHistory').innerHTML='';
@@ -812,7 +822,7 @@ function renderClientHistory(prefill){
     ${rel ? `<div class="hb-stats" style="color:var(--warn);margin-bottom:6px;">⏰ Relance ouverte${rel.relanceDate?' pour le '+formatDateFR(rel.relanceDate):''}</div>`:''}
     ${shown.map(v=>`<div class="hist-item">
       <div class="hi-top"><span class="hi-date">${formatDateFR(v.date)}</span>
-        <span class="pill">${escapeHtml(v.type)}</span>
+        <span class="pill">${escapeHtml(v.type)}</span>${v.ville?`<span class="pill">📍 ${escapeHtml(v.ville)}</span>`:''}
         <span class="pill ${pillClass(v.resultat)}">${escapeHtml(v.resultat)}</span>
         ${montantPill(v)}</div>
       ${(v.contactPrenom||v.contactNom)?`<div class="hi-cr">👤 ${escapeHtml((v.contactPrenom||'')+' '+(v.contactNom||''))}${v.contactTel?' · '+escapeHtml(v.contactTel):''}</div>`:''}
@@ -946,7 +956,7 @@ function visitCardHtml(v){
     </div>
     <div class="vc-meta">
       <span class="pill">${escapeHtml(v.commercial)}</span>
-      <span class="pill">${escapeHtml(v.type)}</span>
+      <span class="pill">${escapeHtml(v.type)}</span>${v.ville?`<span class="pill">📍 ${escapeHtml(v.ville)}</span>`:''}
       <span class="pill ${pillClass(v.resultat)}">${escapeHtml(v.resultat)}</span>
       ${montantPill(v)}
       ${relPill}
@@ -967,7 +977,7 @@ function exportTerrain(fmt){
     downloadBlob(JSON.stringify(list, null, 2), `visites_${ME.nom}_${dateTag}.json`, 'application/json');
   } else {
     const csv = Papa.unparse(list.map(v=>({
-      id:v.id, commercial:v.commercial, client:v.client, date:v.date, type:v.type, resultat:v.resultat,
+      id:v.id, commercial:v.commercial, client:v.client, ville:v.ville||'', date:v.date, type:v.type, resultat:v.resultat,
       montantDevis:v.montantDevis||'', montantCommande:v.montantCommande||'',
       relance:v.relance, relanceDate:v.relanceDate||'', relanceFaite:!!v.relanceFaite,
       contactNom:v.contactNom||'', contactPrenom:v.contactPrenom||'', contactTel:v.contactTel||'', contactEmail:v.contactEmail||'',
@@ -1508,7 +1518,7 @@ function buildVisitesPDF(commercial, start, end, periodLabel, filename){
     doc.autoTable({
       startY: y+4,
       head: [['Date','Client','Contact','Type','Résultat','Montant','Compte-rendu']],
-      body: visites.map(v=>[formatDateFR(v.date), v.client, ((v.contactPrenom||'')+' '+(v.contactNom||'')).trim(), v.type, v.resultat,
+      body: visites.map(v=>[formatDateFR(v.date), v.client + (v.ville ? ' ('+v.ville+')' : ''), ((v.contactPrenom||'')+' '+(v.contactNom||'')).trim(), v.type, v.resultat,
         (+v.montantCommande?pdfEur(v.montantCommande):+v.montantDevis?pdfEur(v.montantDevis):''), v.compteRendu||'']),
       theme:'striped',
       headStyles:{fillColor:navy, textColor:255},
