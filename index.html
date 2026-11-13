@@ -845,20 +845,31 @@ function visitesDuClient(name){
   return VISITES.filter(v=>(v.clientKey||normKey(v.client))===k)
     .sort((a,b)=> (b.date||'').localeCompare(a.date||'') || (b.createdAt||'').localeCompare(a.createdAt||''));
 }
+/* Client repris d'un collègue au changement de portefeuille (envoyé par GIVEDIS OS). */
+function reprisHtml(name){
+  const k = normKey(name);
+  const e = PORTFOLIO.find(c=>normKey(c.client)===k && c.avant);
+  if(!e) return '';
+  return `<div class="hist-box" style="border-left:3px solid var(--warn);margin-bottom:8px;">
+    <div class="hb-title">Client repris de ${escapeHtml(e.avant)}</div>
+    ${e.derniereVisite?`<div class="hb-stats" style="margin-top:4px;">Sa dernière visite : ${formatDateFR(e.derniereVisite)}${e.dernierResultat?' · '+escapeHtml(e.dernierResultat):''}</div>`:'<div class="hb-stats" style="margin-top:4px;">Pas de visite enregistrée par ' + escapeHtml(e.avant) + '.</div>'}
+    ${e.dernierCR?`<div class="hi-cr">${escapeHtml(e.dernierCR)}</div>`:''}
+  </div>`;
+}
 function renderClientHistory(prefill){
   const el = document.getElementById('clientHistory');
   const name = currentClient();
   if(!name){ el.innerHTML=''; HIST_ALL=false; return; }
   const vs = visitesDuClient(name);
   if(!vs.length){
-    el.innerHTML = `<div class="hist-box"><div class="hb-title">Historique</div><div class="hb-stats" style="margin-top:4px;">Aucune visite enregistrée pour ce client : ce sera la première.</div></div>`;
+    el.innerHTML = reprisHtml(name) + `<div class="hist-box"><div class="hb-title">Historique</div><div class="hb-stats" style="margin-top:4px;">Aucune visite enregistrée pour ce client : ce sera la première.</div></div>`;
     return;
   }
   const last = vs[0];
   const j = daysSince(last.date);
   const rel = vs.find(v=>v.relance && !v.relanceFaite);
   const shown = HIST_ALL ? vs : vs.slice(0,3);
-  el.innerHTML = `<div class="hist-box">
+  el.innerHTML = reprisHtml(name) + `<div class="hist-box">
     <div class="hb-head"><span class="hb-title">Historique · ${vs.length} visite${vs.length>1?'s':''}</span>
       <span class="hb-stats">dernière il y a ${j<=0?'aujourd\'hui':j+' j'}</span></div>
     ${rel ? `<div class="hb-stats" style="color:var(--warn);margin-bottom:6px;">⏰ Relance ouverte${rel.relanceDate?' pour le '+formatDateFR(rel.relanceDate):''}</div>`:''}
