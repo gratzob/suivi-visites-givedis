@@ -273,6 +273,25 @@ select option:disabled{color:#5d6478;}
           <label>Ville <span class="req">*</span></label>
           <input type="text" id="fVille" placeholder="Ville du prospect" autocomplete="address-level2">
         </div>
+        <div id="fProspWrap" hidden>
+          <div class="field">
+            <label>Potentiel en € <span class="req">*</span></label>
+            <input type="number" id="fPotentiel" inputmode="decimal" min="0" step="1" placeholder="Ex. 15000">
+            <div class="hint-small">Estimation du chiffre que ce compte peut faire avec nous.</div>
+          </div>
+          <div class="field">
+            <label>Achats <span class="req">*</span> <span style="font-weight:400;">(ce qu'il achète)</span></label>
+            <textarea id="fAchats" rows="2" placeholder="Ex. éclairage LED, câble, appareillage…"></textarea>
+          </div>
+          <div class="field">
+            <label>Fournisseur habituel <span class="req">*</span></label>
+            <input type="text" id="fFournisseur" placeholder="Ex. Rexel Bourgoin">
+          </div>
+          <div class="field">
+            <label>Plan d'action <span class="req">*</span> <span style="font-weight:400;">(ce qui est prévu à la prochaine visite)</span></label>
+            <textarea id="fPlanAction" rows="2" placeholder="Ex. revenir avec le catalogue et une offre de prix"></textarea>
+          </div>
+        </div>
         <div class="field">
           <label>Compte-rendu</label>
           <textarea id="fCompteRendu" placeholder="Ce qui s'est dit, ce qui a été montré, décisions prises..."></textarea>
@@ -642,6 +661,7 @@ function cleanVisite(v){
     resultat:v.resultat||'', relance:!!(v.relance||v.relanceDate), relanceDate:v.relanceDate||null, relanceFaite:!!v.relanceFaite,
     contactNom:v.contactNom||'', contactPrenom:v.contactPrenom||'', contactTel:v.contactTel||'', contactEmail:v.contactEmail||'',
     montantDevis:+v.montantDevis||0, montantCommande:+v.montantCommande||0,
+    potentiel:+v.potentiel||0, achats:v.achats||'', fournisseur:v.fournisseur||'', planAction:v.planAction||'',
     createdAt:v.createdAt||new Date().toISOString(), updatedAt:new Date().toISOString()
   };
 }
@@ -718,7 +738,10 @@ function updateTypeRule(){
 }
 document.addEventListener('change', e=>{ if(e.target && e.target.id==='fType'){ e.target.dataset.touched='1'; updateVilleField(); } });
 /* Ville obligatoire pour une visite de prospection */
-function updateVilleField(){ const w=document.getElementById('fVilleWrap'); if(w) w.hidden = document.getElementById('fType').value!=='Prospection'; }
+function updateVilleField(){
+  const prosp = document.getElementById('fType').value==='Prospection';
+  ['fVilleWrap','fProspWrap'].forEach(id=>{ const w=document.getElementById(id); if(w) w.hidden = !prosp; });
+}
 
 function selectResultat(el){
   document.querySelectorAll('#fResultatGroup .chip').forEach(c=>c.classList.remove('selected'));
@@ -749,6 +772,10 @@ function addVisite(){
   const contactTel = document.getElementById('fContactTel').value.trim();
   const contactEmail = document.getElementById('fContactEmail').value.trim();
   const ville = document.getElementById('fVille').value.trim();
+  const potentiel = parseFloat(document.getElementById('fPotentiel').value.replace(',','.'));
+  const achats = document.getElementById('fAchats').value.trim();
+  const fournisseur = document.getElementById('fFournisseur').value.trim();
+  const planAction = document.getElementById('fPlanAction').value.trim();
   const montantRaw = document.getElementById('fMontant').value.replace(',','.');
   const montant = parseFloat(montantRaw);
 
@@ -756,6 +783,17 @@ function addVisite(){
   if(!date){ alert('Merci d\'indiquer la date de la visite.'); return; }
   if(type==='Prospection' && !ville){ alert('La ville est obligatoire pour une visite de prospection.'); document.getElementById('fVille').focus(); return; }
   if(type==='Prospection' && inPortfolio(client)){ alert('Ce client est déjà dans ton portefeuille : choisis un autre type que « Prospection ».'); return; }
+  if(type==='Prospection'){
+    const manque = [];
+    if(!(potentiel > 0)) manque.push(['fPotentiel','le potentiel en €']);
+    if(!achats) manque.push(['fAchats','ce qu\'il achète']);
+    if(!fournisseur) manque.push(['fFournisseur','le fournisseur habituel']);
+    if(!planAction) manque.push(['fPlanAction','le plan d\'action pour la prochaine visite']);
+    if(manque.length){
+      alert('RDV de prospection : merci de renseigner ' + manque.map(m=>m[1]).join(', ') + '.');
+      document.getElementById(manque[0][0]).focus(); return;
+    }
+  }
   if(!contactNom || !contactPrenom){ alert('Le nom et le prénom du contact sont obligatoires.'); return; }
   if(!resultat){ alert('Merci de sélectionner un résultat.'); return; }
   if((resultat==='Devis établi' || resultat==='Prise de commande') && !(montant > 0)){
@@ -770,6 +808,10 @@ function addVisite(){
     relance: !!relanceDate || resultat==='À relancer', relanceDate: relanceDate, relanceFaite: false,
     contactNom, contactPrenom, contactTel, contactEmail,
     ville: type==='Prospection' ? ville : '',
+    potentiel: type==='Prospection' ? Math.round(potentiel) : 0,
+    achats: type==='Prospection' ? achats : '',
+    fournisseur: type==='Prospection' ? fournisseur : '',
+    planAction: type==='Prospection' ? planAction : '',
     montantDevis: resultat==='Devis établi' ? Math.round(montant*100)/100 : 0,
     montantCommande: resultat==='Prise de commande' ? Math.round(montant*100)/100 : 0,
     nouveauClient: selectVal==='__nouveau__' && !inPortfolio(client),
@@ -781,7 +823,7 @@ function addVisite(){
   toast(navigator.onLine ? 'Visite enregistrée ✓' : 'Visite enregistrée — envoi au retour du réseau');
 
   // reset formulaire
-  ['fClientManual','fContactNom','fContactPrenom','fContactTel','fContactEmail','fCompteRendu','fRelanceDate','fMontant','fVille'].forEach(id=>document.getElementById(id).value='');
+  ['fClientManual','fContactNom','fContactPrenom','fContactTel','fContactEmail','fCompteRendu','fRelanceDate','fMontant','fVille','fPotentiel','fAchats','fFournisseur','fPlanAction'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fClientSelect').value = '';
   document.getElementById('fClientManualWrap').hidden = true;
   document.getElementById('fClientManualHint').textContent = '';
@@ -827,6 +869,7 @@ function renderClientHistory(prefill){
         ${montantPill(v)}</div>
       ${(v.contactPrenom||v.contactNom)?`<div class="hi-cr">👤 ${escapeHtml((v.contactPrenom||'')+' '+(v.contactNom||''))}${v.contactTel?' · '+escapeHtml(v.contactTel):''}</div>`:''}
       ${v.compteRendu?`<div class="hi-cr">${escapeHtml(v.compteRendu.length>180?v.compteRendu.slice(0,180)+'…':v.compteRendu)}</div>`:''}
+      ${v.planAction?`<div class="hi-cr">➜ Prévu : ${escapeHtml(v.planAction)}${+v.potentiel?' · potentiel '+eur(v.potentiel):''}</div>`:''}
     </div>`).join('')}
     ${vs.length>3?`<button class="link-btn" onclick="HIST_ALL=!HIST_ALL;renderClientHistory()">${HIST_ALL?'Réduire':'Voir les '+vs.length+' visites'}</button>`:''}
   </div>`;
@@ -962,8 +1005,18 @@ function visitCardHtml(v){
       ${relPill}
     </div>
     ${v.compteRendu ? `<div class="vc-cr">${escapeHtml(v.compteRendu)}</div>` : ''}
+    ${prospLignes(v)}
     ${contactLine}
   </div>`;
+}
+/* Fiche prospection : potentiel, achats, fournisseur habituel, plan d'action. */
+function prospLignes(v){
+  if(!(+v.potentiel || v.achats || v.fournisseur || v.planAction)) return '';
+  return `<div class="vc-cr" style="font-size:12.5px;">
+    ${+v.potentiel?`<span class="pill info">Potentiel ${eur(v.potentiel)}</span>`:''}
+    ${v.achats?`<div>🛒 Achète : ${escapeHtml(v.achats)}</div>`:''}
+    ${v.fournisseur?`<div>🏷 Fournisseur : ${escapeHtml(v.fournisseur)}</div>`:''}
+    ${v.planAction?`<div>➜ Prochaine visite : ${escapeHtml(v.planAction)}</div>`:''}</div>`;
 }
 function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function formatDateFR(iso){ if(!iso) return ''; const [y,m,d]=String(iso).slice(0,10).split('-'); return `${d}/${m}/${y}`; }
@@ -979,6 +1032,7 @@ function exportTerrain(fmt){
     const csv = Papa.unparse(list.map(v=>({
       id:v.id, commercial:v.commercial, client:v.client, ville:v.ville||'', date:v.date, type:v.type, resultat:v.resultat,
       montantDevis:v.montantDevis||'', montantCommande:v.montantCommande||'',
+      potentiel:v.potentiel||'', achats:v.achats||'', fournisseur:v.fournisseur||'', planAction:v.planAction||'',
       relance:v.relance, relanceDate:v.relanceDate||'', relanceFaite:!!v.relanceFaite,
       contactNom:v.contactNom||'', contactPrenom:v.contactPrenom||'', contactTel:v.contactTel||'', contactEmail:v.contactEmail||'',
       compteRendu:v.compteRendu, createdAt:v.createdAt
